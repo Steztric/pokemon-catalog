@@ -5,17 +5,18 @@
      The /project-status command reads this file to report status. -->
 
 last_updated: 2026-04-25
-current_phase: 2
+current_phase: 3
 overall_status: in_progress
 
 ---
 
 ## Current Focus
 
-Phase 1 (Project Scaffold) is complete. The Tauri 2 desktop application builds and the shell UI
-is functional with routing, a nav bar, and placeholder Dashboard and Scanner pages.
+Phase 2 (CI/CD Pipeline) is complete. GitHub Actions workflows are in place for the frontend
+(all branches) and Tauri desktop build (main + PRs, Ubuntu/macOS/Windows matrix). 41 unit
+tests cover entity shapes, stub implementations, and page component rendering.
 
-Next: Phase 2 — CI/CD Pipeline (GitHub Actions).
+Next: Phase 3 — Pokemon TCG API Integration.
 
 ---
 
@@ -24,7 +25,7 @@ Next: Phase 2 — CI/CD Pipeline (GitHub Actions).
 | # | Phase | Status | Completed |
 |---|---|---|---|
 | 1 | Project Scaffold | complete | 2026-04-25 |
-| 2 | CI/CD Pipeline | not-started | — |
+| 2 | CI/CD Pipeline | complete | 2026-04-25 |
 | 3 | Pokemon TCG API Integration | not-started | — |
 | 4 | Local Persistence Layer | not-started | — |
 | 5 | Collection Dashboard | not-started | — |
@@ -49,9 +50,13 @@ Status values: `not-started` | `in-progress` | `complete` | `blocked`
   use case shells are in place. Shell UI with React Router, NavBar, Dashboard, and Scanner pages.
 
 ### Phase 2 — CI/CD Pipeline
-- Status: not-started
-- Blockers: Phase 1 must be complete ✓
-- Notes: —
+- Status: complete
+- Blockers: none
+- Notes: `.github/workflows/frontend.yml` triggers on every push (typecheck → test → vite build →
+  upload dist). `.github/workflows/tauri.yml` triggers on main/PRs with a 3-platform matrix
+  (ubuntu-22.04, macos-latest, windows-latest) using `tauri-apps/tauri-action@v0`. 41 unit tests
+  added under `src/__tests__/`: entity shape tests, stub interface tests, page smoke tests.
+  Branch protection rules documented in `docs/branch-protection.md`.
 
 ### Phase 3 — Pokemon TCG API Integration
 - Status: not-started
@@ -114,4 +119,5 @@ Status values: `not-started` | `in-progress` | `complete` | `blocked`
 ## Known Issues and Blockers
 
 - Node.js 20.12.0 is below Vite 7's stated minimum (20.19+). Vite currently emits a warning but
-  still builds successfully. Recommend upgrading to Node 20.19+ or Node 22 before Phase 2.
+  still builds and tests pass. CI uses `lts/*` (Node 22) so workflows are unaffected.
+  Recommend upgrading the local development environment to Node 22 before Phase 3.

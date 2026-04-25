@@ -166,6 +166,53 @@ Opens a plain Vite dev server at `http://localhost:1420`. No Tauri or Rust requi
 
 ---
 
+## Testing
+
+Tests use [Vitest](https://vitest.dev) with [React Testing Library](https://testing-library.com/docs/react-testing-library/intro/) and run entirely in Node (jsdom environment — no browser required).
+
+### Run all tests once
+
+```bash
+npm test
+```
+
+### Watch mode (re-runs on file save)
+
+```bash
+npm run test:watch
+```
+
+### Coverage report
+
+```bash
+npx vitest run --coverage
+```
+
+Output is written to `coverage/`. Open `coverage/index.html` in a browser to explore line-level coverage.
+
+### Test file locations
+
+Tests live under `src/__tests__/`, mirroring the structure of `src/`:
+
+```
+src/__tests__/
+  domain/              # Entity shape and type tests
+  infrastructure/      # Stub and adapter tests
+  presentation/        # Component smoke and behaviour tests
+  application/         # Use case tests (added as use cases gain logic)
+```
+
+### Writing tests
+
+Every new module and every behaviour change must be accompanied by a test. The minimum bar per file:
+
+- **Domain entities** — assert that a valid object satisfies the type and has the expected fields.
+- **Infrastructure stubs / adapters** — assert each method resolves without throwing and returns the correct stub value.
+- **Application use cases** — assert the use case produces the correct output for at least the happy path and one error path.
+- **Presentation components** — assert the component renders without crashing and displays its primary content (smoke test).
+
+---
+
 ## Building for production
 
 ### Frontend bundle (browser)
