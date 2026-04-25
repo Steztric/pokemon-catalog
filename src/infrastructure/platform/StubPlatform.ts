@@ -6,6 +6,7 @@ import {
   StubScanEventRepository,
   StubScanSessionRepository,
 } from "../db/StubRepositories";
+import { StubPokemonCardDataProvider } from "../api/StubPokemonCardDataProvider";
 
 class StubImageCacheAdapter implements IImageCacheAdapter {
   async get(_cardId: string): Promise<string | null> {
@@ -45,4 +46,5 @@ export const stubPlatform: IPlatform = {
   storage: buildStubStorage(),
   imageCache: new StubImageCacheAdapter(),
   camera: new StubCameraAdapter(),
+  cardDataProvider: new StubPokemonCardDataProvider(),
 };

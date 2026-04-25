@@ -146,6 +146,38 @@ Rust dependencies are downloaded automatically the first time you run a Cargo co
 
 ---
 
+## Configuration
+
+### Pokemon TCG API key (recommended)
+
+The app fetches card data from [pokemontcg.io](https://pokemontcg.io). Without an API key requests are rate-limited to 1 000 per day. With a free API key the limit rises to 20 000 per day.
+
+**1. Register for a free API key**
+
+Create an account at [dev.pokemontcg.io](https://dev.pokemontcg.io) and copy the key shown on your dashboard.
+
+**2. Create a `.env.local` file in the project root**
+
+```bash
+cp .env.example .env.local
+```
+
+Open `.env.local` and replace the placeholder with your key:
+
+```
+VITE_POKEMON_TCG_API_KEY=your-api-key-here
+```
+
+`.env.local` is listed in `.gitignore` and will never be committed. Do not add secrets to `.env` or any other tracked file.
+
+**3. Restart the dev server**
+
+If the server is already running, stop it and run `npm run dev` (or `npm run tauri dev`) again — Vite reads environment variables at startup.
+
+> **Without a key:** The app still fetches card data at the lower unauthenticated rate limit. For casual development this is usually fine.
+
+---
+
 ## Running the application
 
 ### Desktop (Tauri)

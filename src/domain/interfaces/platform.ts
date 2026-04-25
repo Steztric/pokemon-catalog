@@ -5,6 +5,7 @@ import type {
   IScanEventRepository,
   IScanSessionRepository,
 } from "./repositories";
+import type { IPokemonCardDataProvider } from "./services";
 
 export interface IStorageAdapter {
   cardRepository: ICardRepository;
@@ -32,4 +33,5 @@ export interface IPlatform {
   storage: IStorageAdapter;
   imageCache: IImageCacheAdapter;
   camera: ICameraAdapter;
+  cardDataProvider: IPokemonCardDataProvider;
 }

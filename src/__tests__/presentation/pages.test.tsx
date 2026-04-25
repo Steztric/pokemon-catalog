@@ -22,6 +22,26 @@ describe("DashboardPage", () => {
     );
     expect(screen.getByRole("link", { name: /scanner/i })).toBeInTheDocument();
   });
+
+  it("renders placeholder card names", () => {
+    render(
+      <MemoryRouter>
+        <DashboardPage />
+      </MemoryRouter>
+    );
+    expect(screen.getByText("Charizard")).toBeInTheDocument();
+    expect(screen.getByText("Pikachu")).toBeInTheDocument();
+    expect(screen.getByText("Professor Oak")).toBeInTheDocument();
+  });
+
+  it("renders a placeholder notice", () => {
+    render(
+      <MemoryRouter>
+        <DashboardPage />
+      </MemoryRouter>
+    );
+    expect(screen.getByText(/placeholder cards/i)).toBeInTheDocument();
+  });
 });
 
 describe("ScannerPage", () => {

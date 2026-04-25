@@ -5,18 +5,21 @@
      The /project-status command reads this file to report status. -->
 
 last_updated: 2026-04-25
-current_phase: 3
+current_phase: 4
 overall_status: in_progress
 
 ---
 
 ## Current Focus
 
-Phase 2 (CI/CD Pipeline) is complete. GitHub Actions workflows are in place for the frontend
-(all branches) and Tauri desktop build (main + PRs, Ubuntu/macOS/Windows matrix). 41 unit
-tests cover entity shapes, stub implementations, and page component rendering.
+Phase 3 (Pokemon TCG API Integration) is complete. `PokemonTCGApiClient` fetches live card
+and set data from pokemontcg.io (authenticated via `VITE_POKEMON_TCG_API_KEY`, degrades
+gracefully without it). `CachingCardDataProvider` wraps it with a read-through cache backed
+by `ICardRepository`/`ICardSetRepository`. `IPlatform` now exposes `cardDataProvider` and
+the production platform resolver wires the real client. Stub platform uses
+`StubPokemonCardDataProvider` for tests. 68 tests passing.
 
-Next: Phase 3 — Pokemon TCG API Integration.
+Next: Phase 4 — Local Persistence Layer.
 
 ---
 
@@ -26,7 +29,7 @@ Next: Phase 3 — Pokemon TCG API Integration.
 |---|---|---|---|
 | 1 | Project Scaffold | complete | 2026-04-25 |
 | 2 | CI/CD Pipeline | complete | 2026-04-25 |
-| 3 | Pokemon TCG API Integration | not-started | — |
+| 3 | Pokemon TCG API Integration | complete | 2026-04-25 |
 | 4 | Local Persistence Layer | not-started | — |
 | 5 | Collection Dashboard | not-started | — |
 | 6 | Webcam Feed and Card Presence Detection | not-started | — |
@@ -59,9 +62,15 @@ Status values: `not-started` | `in-progress` | `complete` | `blocked`
   Branch protection rules documented in `docs/branch-protection.md`.
 
 ### Phase 3 — Pokemon TCG API Integration
-- Status: not-started
-- Blockers: Phase 1 must be complete ✓
-- Notes: —
+- Status: complete
+- Blockers: none
+- Notes: `PokemonTCGApiClient` implements `IPokemonCardDataProvider` against the pokemontcg.io v2
+  API. API key injected via `VITE_POKEMON_TCG_API_KEY` env var; absent key degrades to
+  unauthenticated (lower rate limit). `CachingCardDataProvider` decorates the client with a
+  read-through cache: card/set lookups check `ICardRepository`/`ICardSetRepository` first;
+  searches and set listings always hit the network but cache individual results as a side-effect.
+  `IPlatform` extended with `cardDataProvider`; production resolver wires real client+cache;
+  `StubPlatform` uses `StubPokemonCardDataProvider`. 27 new tests (18 API client, 9 caching).
 
 ### Phase 4 — Local Persistence Layer
 - Status: not-started
