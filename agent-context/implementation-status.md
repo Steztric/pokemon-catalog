@@ -5,21 +5,21 @@
      The /project-status command reads this file to report status. -->
 
 last_updated: 2026-04-25
-current_phase: 4
+current_phase: 5
 overall_status: in_progress
 
 ---
 
 ## Current Focus
 
-Phase 3 (Pokemon TCG API Integration) is complete. `PokemonTCGApiClient` fetches live card
-and set data from pokemontcg.io (authenticated via `VITE_POKEMON_TCG_API_KEY`, degrades
-gracefully without it). `CachingCardDataProvider` wraps it with a read-through cache backed
-by `ICardRepository`/`ICardSetRepository`. `IPlatform` now exposes `cardDataProvider` and
-the production platform resolver wires the real client. Stub platform uses
-`StubPokemonCardDataProvider` for tests. 68 tests passing.
+Phase 4 (Local Persistence Layer) is complete. SQLite repositories (via Tauri SQL plugin)
+and IndexedDB repositories (via native browser API) are both implemented for all five
+domain repositories. A migration runner handles schema creation and incremental upgrades.
+The platform resolver detects the runtime via `window.__TAURI_INTERNALS__` and wires the
+correct storage backend. Tests use `sql.js` (in-memory SQLite) for SQLite repo tests and
+`fake-indexeddb` for IndexedDB tests. 115 tests passing.
 
-Next: Phase 4 — Local Persistence Layer.
+Next: Phase 5 — Collection Dashboard.
 
 ---
 
@@ -30,7 +30,7 @@ Next: Phase 4 — Local Persistence Layer.
 | 1 | Project Scaffold | complete | 2026-04-25 |
 | 2 | CI/CD Pipeline | complete | 2026-04-25 |
 | 3 | Pokemon TCG API Integration | complete | 2026-04-25 |
-| 4 | Local Persistence Layer | not-started | — |
+| 4 | Local Persistence Layer | complete | 2026-04-25 |
 | 5 | Collection Dashboard | not-started | — |
 | 6 | Webcam Feed and Card Presence Detection | not-started | — |
 | 7 | Local pHash Card Identification | not-started | — |
@@ -73,9 +73,15 @@ Status values: `not-started` | `in-progress` | `complete` | `blocked`
   `StubPlatform` uses `StubPokemonCardDataProvider`. 27 new tests (18 API client, 9 caching).
 
 ### Phase 4 — Local Persistence Layer
-- Status: not-started
-- Blockers: Phase 1 must be complete ✓
-- Notes: —
+- Status: complete
+- Blockers: none
+- Notes: `IDatabase` interface abstracts SQL execution for both Tauri and test environments.
+  `TauriSQLiteDatabase` wraps `@tauri-apps/plugin-sql`. `IndexedDBDatabase` wraps the native
+  browser IndexedDB API. Migration 1 creates all five domain tables; `runMigrations()` accepts
+  injectable migration arrays for testability. Platform resolver updated to detect
+  `window.__TAURI_INTERNALS__` and select SQLite (desktop) or IndexedDB (browser) storage.
+  `tauri-plugin-sql` registered in Rust and SQL permissions added to capabilities.
+  45 new tests: 5 migration runner + 20 SQLite repo + 20 IndexedDB repo.
 
 ### Phase 5 — Collection Dashboard
 - Status: not-started
