@@ -8,7 +8,7 @@ Your response must cover, in order:
 
 3. **Current focus** — summarise what is actively being worked on, taken directly from the "Current Focus" section of the status file.
 
-4. **What's next** — identify the next `not-started` phase whose blockers are all `complete`, and state what it involves (one sentence, cross-referencing `implementation-plan.md` if useful).
+4. **What's next** — identify the next `not-started` phase whose blockers are all `complete`, and state what it involves (one sentence, cross-referencing `docs/implementation-plan.md` if useful).
 
 5. **Blockers** — list anything in the "Known Issues and Blockers" section. If empty, say so explicitly.
 
@@ -16,4 +16,4 @@ Your response must cover, in order:
 
 Do not scan the codebase or infer status from file existence. The status file is the authoritative source. If the status file appears inconsistent with observable reality (e.g. a phase is marked complete but its acceptance criteria are clearly not met), note the discrepancy rather than silently correcting it.
 
-If $ARGUMENTS is non-empty, treat it as a phase number or name and focus the report on that phase only, pulling detail from `implementation-plan.md` for context.
+If $ARGUMENTS is non-empty, treat it as a phase number or name and focus the report on that phase only, pulling detail from `docs/implementation-plan.md` for context.

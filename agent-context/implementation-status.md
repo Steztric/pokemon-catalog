@@ -5,18 +5,17 @@
      The /project-status command reads this file to report status. -->
 
 last_updated: 2026-04-25
-current_phase: none
-overall_status: not_started
+current_phase: 2
+overall_status: in_progress
 
 ---
 
 ## Current Focus
 
-Nothing has been implemented yet. The project is in the planning stage.
-All three planning documents are complete:
-- `requirements.md` — product requirements
-- `architecture.md` — technology decisions and layer design
-- `implementation-plan.md` — phased development plan (11 phases)
+Phase 1 (Project Scaffold) is complete. The Tauri 2 desktop application builds and the shell UI
+is functional with routing, a nav bar, and placeholder Dashboard and Scanner pages.
+
+Next: Phase 2 — CI/CD Pipeline (GitHub Actions).
 
 ---
 
@@ -24,7 +23,7 @@ All three planning documents are complete:
 
 | # | Phase | Status | Completed |
 |---|---|---|---|
-| 1 | Project Scaffold | not-started | — |
+| 1 | Project Scaffold | complete | 2026-04-25 |
 | 2 | CI/CD Pipeline | not-started | — |
 | 3 | Pokemon TCG API Integration | not-started | — |
 | 4 | Local Persistence Layer | not-started | — |
@@ -43,23 +42,25 @@ Status values: `not-started` | `in-progress` | `complete` | `blocked`
 ## Phase Notes
 
 ### Phase 1 — Project Scaffold
-- Status: not-started
+- Status: complete
 - Blockers: none
-- Notes: —
+- Notes: All acceptance criteria met. `tsc --noEmit`, `vite build`, and `cargo build` all pass.
+  All domain types, repository/service/platform interfaces, stub infrastructure, and application
+  use case shells are in place. Shell UI with React Router, NavBar, Dashboard, and Scanner pages.
 
 ### Phase 2 — CI/CD Pipeline
 - Status: not-started
-- Blockers: Phase 1 must be complete
+- Blockers: Phase 1 must be complete ✓
 - Notes: —
 
 ### Phase 3 — Pokemon TCG API Integration
 - Status: not-started
-- Blockers: Phase 1 must be complete
+- Blockers: Phase 1 must be complete ✓
 - Notes: —
 
 ### Phase 4 — Local Persistence Layer
 - Status: not-started
-- Blockers: Phase 1 must be complete
+- Blockers: Phase 1 must be complete ✓
 - Notes: —
 
 ### Phase 5 — Collection Dashboard
@@ -101,16 +102,16 @@ Status values: `not-started` | `in-progress` | `complete` | `blocked`
 
 ## Decisions and Deviations
 
-<!-- Record any decisions made during implementation that deviate from
-     architecture.md or implementation-plan.md, or clarify ambiguities
-     that came up. Format: date — phase — decision. -->
-
-_None yet._
+- 2026-04-25 — Phase 1 — Used `react-router-dom` v7 (TanStack Router was not chosen; React Router
+  is more widely used and the plan did not mandate one over the other).
+- 2026-04-25 — Phase 1 — Added `ICardSetRepository` to the storage adapter (architecture diagram
+  implied it but did not list it explicitly; it is needed to support CardSet persistence in Phase 4).
+- 2026-04-25 — Phase 1 — Required Ubuntu 22.04 for `libwebkit2gtk-4.1-dev`; WSL2 was upgraded
+  from 20.04 to 22.04 before scaffolding.
 
 ---
 
 ## Known Issues and Blockers
 
-<!-- Record anything currently blocking progress or known to be broken. -->
-
-_None yet._
+- Node.js 20.12.0 is below Vite 7's stated minimum (20.19+). Vite currently emits a warning but
+  still builds successfully. Recommend upgrading to Node 20.19+ or Node 22 before Phase 2.
