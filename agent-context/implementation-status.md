@@ -118,6 +118,4 @@ Status values: `not-started` | `in-progress` | `complete` | `blocked`
 
 ## Known Issues and Blockers
 
-- Node.js 20.12.0 is below Vite 7's stated minimum (20.19+). Vite currently emits a warning but
-  still builds and tests pass. CI uses `lts/*` (Node 22) so workflows are unaffected.
-  Recommend upgrading the local development environment to Node 22 before Phase 3.
+None.
