@@ -4,22 +4,20 @@
      Update it at the end of each phase or significant sub-task.
      The /project-status command reads this file to report status. -->
 
-last_updated: 2026-04-25
-current_phase: 5
+last_updated: 2026-04-26
+current_phase: 6
 overall_status: in_progress
 
 ---
 
 ## Current Focus
 
-Phase 4 (Local Persistence Layer) is complete. SQLite repositories (via Tauri SQL plugin)
-and IndexedDB repositories (via native browser API) are both implemented for all five
-domain repositories. A migration runner handles schema creation and incremental upgrades.
-The platform resolver detects the runtime via `window.__TAURI_INTERNALS__` and wires the
-correct storage backend. Tests use `sql.js` (in-memory SQLite) for SQLite repo tests and
-`fake-indexeddb` for IndexedDB tests. 115 tests passing.
+Phase 5 (Collection Dashboard) is complete. The `DashboardPage` now queries the catalog via
+`useCatalog` (TanStack Query) and renders cards in a grid or list view with full filter/sort
+controls. Filter and sort state lives in URL search params; grid/list preference persists to
+`localStorage`. 146 tests passing.
 
-Next: Phase 5 — Collection Dashboard.
+Next: Phase 6 — Webcam Feed and Card Presence Detection.
 
 ---
 
@@ -31,7 +29,7 @@ Next: Phase 5 — Collection Dashboard.
 | 2 | CI/CD Pipeline | complete | 2026-04-25 |
 | 3 | Pokemon TCG API Integration | complete | 2026-04-25 |
 | 4 | Local Persistence Layer | complete | 2026-04-25 |
-| 5 | Collection Dashboard | not-started | — |
+| 5 | Collection Dashboard | complete | 2026-04-26 |
 | 6 | Webcam Feed and Card Presence Detection | not-started | — |
 | 7 | Local pHash Card Identification | not-started | — |
 | 8 | LLM Vision Fallback | not-started | — |
@@ -84,9 +82,15 @@ Status values: `not-started` | `in-progress` | `complete` | `blocked`
   45 new tests: 5 migration runner + 20 SQLite repo + 20 IndexedDB repo.
 
 ### Phase 5 — Collection Dashboard
-- Status: not-started
-- Blockers: Phases 3 and 4 must be complete
-- Notes: —
+- Status: complete
+- Blockers: none
+- Notes: `searchCatalog` and `getCardDetail` use cases extended to return `CardDetail` (entry +
+  card joined in memory, compatible with both SQLite and IndexedDB backends). `DashboardPage`
+  rewritten: `useCatalog` hook wraps TanStack Query around `searchCatalog`; filter/sort state
+  lives in URL search params via `useSearchParams`; grid/list view persists to `localStorage`
+  via `useLocalStorage` hook. New components: `CardTile`, `CardGrid`, `CardList`, `ViewToggle`,
+  `FilterBar`, `CatalogSkeleton`. 31 new tests added (6 application, 25 presentation).
+  Total: 146 tests passing.
 
 ### Phase 6 — Webcam Feed and Card Presence Detection
 - Status: not-started

@@ -7,8 +7,12 @@ export interface CardDetail {
 }
 
 export async function getCardDetail(
-  _storage: IStorageAdapter,
-  _cardId: string
+  storage: IStorageAdapter,
+  cardId: string,
 ): Promise<CardDetail | null> {
-  return null;
+  const entry = await storage.catalogRepository.findByCardId(cardId);
+  if (!entry) return null;
+  const card = await storage.cardRepository.findById(cardId);
+  if (!card) return null;
+  return { entry, card };
 }
