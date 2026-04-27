@@ -11,6 +11,7 @@ import {
   SQLiteCatalogRepository,
   SQLiteScanEventRepository,
   SQLiteScanSessionRepository,
+  SQLitePHashIndexRepository,
 } from "../../infrastructure/db/SQLiteRepositories";
 
 function makeStorage(dbPromise: Promise<IDatabase>): IStorageAdapter {
@@ -20,6 +21,7 @@ function makeStorage(dbPromise: Promise<IDatabase>): IStorageAdapter {
     catalogRepository: new SQLiteCatalogRepository(dbPromise),
     scanEventRepository: new SQLiteScanEventRepository(dbPromise),
     scanSessionRepository: new SQLiteScanSessionRepository(dbPromise),
+    pHashIndexRepository: new SQLitePHashIndexRepository(dbPromise),
   };
 }
 

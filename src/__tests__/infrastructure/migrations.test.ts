@@ -10,6 +10,7 @@ const TABLE_NAMES = [
   "catalog_entries",
   "scan_events",
   "scan_sessions",
+  "phash_index",
 ];
 
 async function getTableNames(db: IDatabase): Promise<string[]> {

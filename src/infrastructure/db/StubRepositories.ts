@@ -4,6 +4,7 @@ import type {
   ICatalogRepository,
   IScanEventRepository,
   IScanSessionRepository,
+  IPHashIndexRepository,
 } from "../../domain/interfaces";
 import type {
   PokemonCard,
@@ -13,6 +14,7 @@ import type {
   ScanSession,
   CardFilter,
   CatalogFilter,
+  PHashEntry,
 } from "../../domain/entities";
 
 export class StubCardRepository implements ICardRepository {
@@ -59,4 +61,23 @@ export class StubScanSessionRepository implements IScanSessionRepository {
     return null;
   }
   async update(_session: ScanSession): Promise<void> {}
+}
+
+export class StubPHashIndexRepository implements IPHashIndexRepository {
+  private entries: PHashEntry[] = [];
+
+  async findAll(): Promise<PHashEntry[]> {
+    return [...this.entries];
+  }
+  async upsert(entry: PHashEntry): Promise<void> {
+    const idx = this.entries.findIndex((e) => e.cardId === entry.cardId);
+    if (idx >= 0) this.entries[idx] = entry;
+    else this.entries.push(entry);
+  }
+  async hasCard(cardId: string): Promise<boolean> {
+    return this.entries.some((e) => e.cardId === cardId);
+  }
+  async count(): Promise<number> {
+    return this.entries.length;
+  }
 }

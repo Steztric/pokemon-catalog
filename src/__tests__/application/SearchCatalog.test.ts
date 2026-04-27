@@ -11,6 +11,7 @@ import {
   SQLiteCardSetRepository,
   SQLiteScanEventRepository,
   SQLiteScanSessionRepository,
+  SQLitePHashIndexRepository,
 } from "../../infrastructure/db/SQLiteRepositories";
 
 const CHARIZARD: PokemonCard = {
@@ -74,6 +75,7 @@ function makeStorage(dbPromise: Promise<IDatabase>): IStorageAdapter {
     catalogRepository: new SQLiteCatalogRepository(dbPromise),
     scanEventRepository: new SQLiteScanEventRepository(dbPromise),
     scanSessionRepository: new SQLiteScanSessionRepository(dbPromise),
+    pHashIndexRepository: new SQLitePHashIndexRepository(dbPromise),
   };
 }
 

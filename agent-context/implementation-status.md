@@ -4,23 +4,26 @@
      Update it at the end of each phase or significant sub-task.
      The /project-status command reads this file to report status. -->
 
-last_updated: 2026-04-26
-current_phase: 7
+last_updated: 2026-04-27
+current_phase: 8
 overall_status: in_progress
 
 ---
 
 ## Current Focus
 
-Phase 6 (Webcam Feed and Card Presence Detection) is complete. `WebRTCCameraAdapter`
-implements `ICameraAdapter` via `getUserMedia`. `CardPresenceDetector` runs a Sobel-edge /
-density-bin rectangle detector at ~4 fps and signals stable detection after 3 consistent
-frames. `preprocessFrame` crops and normalises the detected region to a 300×420 `ImageFrame`.
-`StartScanSession` and `EndScanSession` use cases are fully implemented. `ScannerPage`
-rewritten with live video feed, canvas overlay, camera selector, error state, and session tally.
-161 tests passing.
+Phase 7 (Local pHash Card Identification) is complete. `computePHash` implements DCT-based
+64-bit perceptual hashing (32×32 grayscale resize → 2D DCT → top-left 8×8 block → median
+threshold). `LocalPHashIdentifier` queries `IPHashIndexRepository` for the closest Hamming
+match; distance ≤ 10 → `identified`, otherwise `low_confidence`. `buildPHashIndex` builds
+the index idempotently from card thumbnail URLs via an injectable `ImageLoader`.
+`IPHashIndexRepository` is backed by SQLite (`phash_index` table, migration 2) and IndexedDB
+(v2 store). `LocalPHashIdentifier` registered as `ICardIdentificationService` in the live
+platform. `ScannerPage` now triggers identification on stable detection, shows
+"Identifying…" during async call, then shows the matched card ID or a low-confidence
+message for 4 seconds before resetting. 192 tests passing.
 
-Next: Phase 7 — Local pHash Card Identification.
+Next: Phase 8 — LLM Vision Fallback.
 
 ---
 
@@ -34,7 +37,7 @@ Next: Phase 7 — Local pHash Card Identification.
 | 4 | Local Persistence Layer | complete | 2026-04-25 |
 | 5 | Collection Dashboard | complete | 2026-04-26 |
 | 6 | Webcam Feed and Card Presence Detection | complete | 2026-04-26 |
-| 7 | Local pHash Card Identification | not-started | — |
+| 7 | Local pHash Card Identification | complete | 2026-04-27 |
 | 8 | LLM Vision Fallback | not-started | — |
 | 9 | Scan Confirmation Flow and Catalog Management | not-started | — |
 | 10 | Image Caching and Offline Support | not-started | — |
@@ -109,9 +112,20 @@ Status values: `not-started` | `in-progress` | `complete` | `blocked`
   ends sessions on mount/unmount. 15 new tests. Total: 161 tests passing.
 
 ### Phase 7 — Local pHash Card Identification
-- Status: not-started
-- Blockers: Phases 3 and 6 must be complete
-- Notes: —
+- Status: complete
+- Blockers: none
+- Notes: `PHashEntry` entity and `IPHashIndexRepository` interface added to domain. Migration 2
+  creates `phash_index` SQLite table; IndexedDB bumped to v2 with a `phash_index` store.
+  `SQLitePHashIndexRepository` and `IndexedDBPHashIndexRepository` implement the interface.
+  `pHash.ts` implements DCT-based 64-bit perceptual hashing. `LocalPHashIdentifier` queries
+  the index and applies a Hamming-distance threshold (≤10 → identified). `buildPHashIndex`
+  is an injectable, idempotent index builder (uses `ImageLoader` callback for testability).
+  `browserImageLoader` provided for production canvas-based image loading. `IStorageAdapter`
+  extended with `pHashIndexRepository`; `IPlatform` extended with `cardIdentificationService`;
+  all platform implementations (Tauri, browser, stub) wired accordingly. `ScannerPage`
+  triggers identification on stable detection, shows Identifying/Match/Low-confidence states.
+  27 new tests (7 pHash, 4 index builder, 4 identifier, 6 SQLite repo, 6 IndexedDB repo).
+  Total: 192 tests passing.
 
 ### Phase 8 — LLM Vision Fallback
 - Status: not-started

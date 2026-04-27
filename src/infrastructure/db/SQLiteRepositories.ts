@@ -4,6 +4,7 @@ import type {
   ICatalogRepository,
   IScanEventRepository,
   IScanSessionRepository,
+  IPHashIndexRepository,
 } from "../../domain/interfaces";
 import type {
   PokemonCard,
@@ -14,6 +15,7 @@ import type {
   CardFilter,
   CatalogFilter,
   CardType,
+  PHashEntry,
 } from "../../domain/entities";
 import type { IDatabase } from "./IDatabase";
 
@@ -361,5 +363,50 @@ export class SQLiteScanSessionRepository implements IScanSessionRepository {
         session.id,
       ],
     );
+  }
+}
+
+interface PHashRow {
+  card_id: string;
+  hash_hex: string;
+  indexed_at: string;
+}
+
+export class SQLitePHashIndexRepository implements IPHashIndexRepository {
+  constructor(private readonly db: Promise<IDatabase>) {}
+
+  async findAll(): Promise<PHashEntry[]> {
+    const db = await this.db;
+    const rows = await db.select<PHashRow>("SELECT * FROM phash_index");
+    return rows.map((r) => ({
+      cardId: r.card_id,
+      hashHex: r.hash_hex,
+      indexedAt: new Date(r.indexed_at),
+    }));
+  }
+
+  async upsert(entry: PHashEntry): Promise<void> {
+    const db = await this.db;
+    await db.execute(
+      "INSERT OR REPLACE INTO phash_index (card_id, hash_hex, indexed_at) VALUES (?, ?, ?)",
+      [entry.cardId, entry.hashHex, entry.indexedAt.toISOString()],
+    );
+  }
+
+  async hasCard(cardId: string): Promise<boolean> {
+    const db = await this.db;
+    const rows = await db.select<{ card_id: string }>(
+      "SELECT card_id FROM phash_index WHERE card_id = ?",
+      [cardId],
+    );
+    return rows.length > 0;
+  }
+
+  async count(): Promise<number> {
+    const db = await this.db;
+    const rows = await db.select<{ n: number }>(
+      "SELECT COUNT(*) as n FROM phash_index",
+    );
+    return rows[0]?.n ?? 0;
   }
 }

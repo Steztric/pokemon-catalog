@@ -47,6 +47,16 @@ export const MIGRATIONS: Migration[] = [
       )`,
     ],
   },
+  {
+    id: 2,
+    statements: [
+      `CREATE TABLE IF NOT EXISTS phash_index (
+        card_id TEXT PRIMARY KEY,
+        hash_hex TEXT NOT NULL,
+        indexed_at TEXT NOT NULL
+      )`,
+    ],
+  },
 ];
 
 export async function runMigrations(

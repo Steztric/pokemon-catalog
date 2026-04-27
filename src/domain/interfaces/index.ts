@@ -4,6 +4,7 @@ export type {
   ICatalogRepository,
   IScanEventRepository,
   IScanSessionRepository,
+  IPHashIndexRepository,
 } from "./repositories";
 
 export type { ICardIdentificationService, IPokemonCardDataProvider } from "./services";

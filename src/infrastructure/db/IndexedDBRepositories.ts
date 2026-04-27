@@ -4,6 +4,7 @@ import type {
   ICatalogRepository,
   IScanEventRepository,
   IScanSessionRepository,
+  IPHashIndexRepository,
 } from "../../domain/interfaces";
 import type {
   PokemonCard,
@@ -13,6 +14,7 @@ import type {
   ScanSession,
   CardFilter,
   CatalogFilter,
+  PHashEntry,
 } from "../../domain/entities";
 import type { IndexedDBDatabase } from "./IndexedDBDatabase";
 
@@ -134,5 +136,31 @@ export class IndexedDBScanSessionRepository implements IScanSessionRepository {
 
   async update(session: ScanSession): Promise<void> {
     await (await this.db).put<ScanSession>("scan_sessions", session);
+  }
+}
+
+export class IndexedDBPHashIndexRepository implements IPHashIndexRepository {
+  constructor(private readonly db: Promise<IndexedDBDatabase>) {}
+
+  async findAll(): Promise<PHashEntry[]> {
+    const raw = await (await this.db).getAll<{ cardId: string; hashHex: string; indexedAt: string }>("phash_index");
+    return raw.map((r) => ({ ...r, indexedAt: new Date(r.indexedAt) }));
+  }
+
+  async upsert(entry: PHashEntry): Promise<void> {
+    await (await this.db).put<{ cardId: string; hashHex: string; indexedAt: string }>(
+      "phash_index",
+      { cardId: entry.cardId, hashHex: entry.hashHex, indexedAt: entry.indexedAt.toISOString() },
+    );
+  }
+
+  async hasCard(cardId: string): Promise<boolean> {
+    const result = await (await this.db).get<PHashEntry>("phash_index", cardId);
+    return result !== null;
+  }
+
+  async count(): Promise<number> {
+    const all = await (await this.db).getAll<PHashEntry>("phash_index");
+    return all.length;
   }
 }

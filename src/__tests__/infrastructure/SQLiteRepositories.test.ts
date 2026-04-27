@@ -5,6 +5,7 @@ import {
   SQLiteCatalogRepository,
   SQLiteScanEventRepository,
   SQLiteScanSessionRepository,
+  SQLitePHashIndexRepository,
 } from "../../infrastructure/db/SQLiteRepositories";
 import { runMigrations } from "../../infrastructure/db/migrations";
 import type { IDatabase } from "../../infrastructure/db/IDatabase";
@@ -13,6 +14,7 @@ import type {
   CardSet,
   CatalogEntry,
   ScanEvent,
+  PHashEntry,
   ScanSession,
 } from "../../domain/entities";
 import { createSqlTestDatabase } from "./sqlTestDatabase";
@@ -276,5 +278,63 @@ describe("SQLiteScanSessionRepository", () => {
     const found = await repo.findById(SESSION.id);
     expect(found!.endedAt).toBeInstanceOf(Date);
     expect(found!.cardsScanned).toBe(5);
+  });
+});
+
+describe("SQLitePHashIndexRepository", () => {
+  let db: IDatabase;
+  let repo: SQLitePHashIndexRepository;
+
+  const ENTRY_A: PHashEntry = {
+    cardId: "base1-4",
+    hashHex: "deadbeefcafe0123",
+    indexedAt: new Date("2026-01-01T00:00:00Z"),
+  };
+  const ENTRY_B: PHashEntry = {
+    cardId: "base1-25",
+    hashHex: "0123456789abcdef",
+    indexedAt: new Date("2026-01-02T00:00:00Z"),
+  };
+
+  beforeEach(async () => {
+    db = await createSqlTestDatabase();
+    await runMigrations(db);
+    repo = new SQLitePHashIndexRepository(Promise.resolve(db));
+  });
+
+  it("findAll returns empty array on fresh database", async () => {
+    expect(await repo.findAll()).toHaveLength(0);
+  });
+
+  it("upsert stores an entry and findAll returns it", async () => {
+    await repo.upsert(ENTRY_A);
+    const all = await repo.findAll();
+    expect(all).toHaveLength(1);
+    expect(all[0].cardId).toBe(ENTRY_A.cardId);
+    expect(all[0].hashHex).toBe(ENTRY_A.hashHex);
+  });
+
+  it("upsert replaces an existing entry with the same cardId", async () => {
+    await repo.upsert(ENTRY_A);
+    await repo.upsert({ ...ENTRY_A, hashHex: "ffffffffffffffff" });
+    const all = await repo.findAll();
+    expect(all).toHaveLength(1);
+    expect(all[0].hashHex).toBe("ffffffffffffffff");
+  });
+
+  it("hasCard returns false for unknown cardId", async () => {
+    expect(await repo.hasCard("base1-4")).toBe(false);
+  });
+
+  it("hasCard returns true after upsert", async () => {
+    await repo.upsert(ENTRY_A);
+    expect(await repo.hasCard(ENTRY_A.cardId)).toBe(true);
+  });
+
+  it("count reflects number of entries", async () => {
+    expect(await repo.count()).toBe(0);
+    await repo.upsert(ENTRY_A);
+    await repo.upsert(ENTRY_B);
+    expect(await repo.count()).toBe(2);
   });
 });

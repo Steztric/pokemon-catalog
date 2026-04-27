@@ -4,8 +4,9 @@ import type {
   ICatalogRepository,
   IScanEventRepository,
   IScanSessionRepository,
+  IPHashIndexRepository,
 } from "./repositories";
-import type { IPokemonCardDataProvider } from "./services";
+import type { IPokemonCardDataProvider, ICardIdentificationService } from "./services";
 
 export interface IStorageAdapter {
   cardRepository: ICardRepository;
@@ -13,6 +14,7 @@ export interface IStorageAdapter {
   catalogRepository: ICatalogRepository;
   scanEventRepository: IScanEventRepository;
   scanSessionRepository: IScanSessionRepository;
+  pHashIndexRepository: IPHashIndexRepository;
 }
 
 export interface IImageCacheAdapter {
@@ -34,4 +36,5 @@ export interface IPlatform {
   imageCache: IImageCacheAdapter;
   camera: ICameraAdapter;
   cardDataProvider: IPokemonCardDataProvider;
+  cardIdentificationService: ICardIdentificationService;
 }

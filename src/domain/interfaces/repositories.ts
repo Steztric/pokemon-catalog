@@ -6,6 +6,7 @@ import type {
   ScanSession,
   CardFilter,
   CatalogFilter,
+  PHashEntry,
 } from "../entities";
 
 export interface ICardRepository {
@@ -36,4 +37,11 @@ export interface IScanSessionRepository {
   save(session: ScanSession): Promise<void>;
   findById(id: string): Promise<ScanSession | null>;
   update(session: ScanSession): Promise<void>;
+}
+
+export interface IPHashIndexRepository {
+  findAll(): Promise<PHashEntry[]>;
+  upsert(entry: PHashEntry): Promise<void>;
+  hasCard(cardId: string): Promise<boolean>;
+  count(): Promise<number>;
 }

@@ -1,5 +1,5 @@
 const DB_NAME = "pokemon-catalog";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 export class IndexedDBDatabase {
   private constructor(private readonly db: IDBDatabase) {}
@@ -32,6 +32,9 @@ export class IndexedDBDatabase {
         }
         if (!db.objectStoreNames.contains("scan_sessions")) {
           db.createObjectStore("scan_sessions", { keyPath: "id" });
+        }
+        if (!db.objectStoreNames.contains("phash_index")) {
+          db.createObjectStore("phash_index", { keyPath: "cardId" });
         }
       };
 

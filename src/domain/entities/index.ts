@@ -70,3 +70,9 @@ export interface IdentificationResult {
   confidence: number;
   strategy: "local_hash" | "llm_vision";
 }
+
+export interface PHashEntry {
+  cardId: string;
+  hashHex: string;
+  indexedAt: Date;
+}

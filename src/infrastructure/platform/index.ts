@@ -12,6 +12,7 @@ import {
   SQLiteCatalogRepository,
   SQLiteScanEventRepository,
   SQLiteScanSessionRepository,
+  SQLitePHashIndexRepository,
 } from "../db/SQLiteRepositories";
 import { IndexedDBDatabase } from "../db/IndexedDBDatabase";
 import {
@@ -20,7 +21,9 @@ import {
   IndexedDBCatalogRepository,
   IndexedDBScanEventRepository,
   IndexedDBScanSessionRepository,
+  IndexedDBPHashIndexRepository,
 } from "../db/IndexedDBRepositories";
+import { LocalPHashIdentifier } from "../vision/localPHashIdentifier";
 
 function isTauri(): boolean {
   return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
@@ -40,6 +43,7 @@ function buildTauriStorage(): IStorageAdapter {
     catalogRepository: new SQLiteCatalogRepository(dbPromise),
     scanEventRepository: new SQLiteScanEventRepository(dbPromise),
     scanSessionRepository: new SQLiteScanSessionRepository(dbPromise),
+    pHashIndexRepository: new SQLitePHashIndexRepository(dbPromise),
   };
 }
 
@@ -51,6 +55,7 @@ function buildBrowserStorage(): IStorageAdapter {
     catalogRepository: new IndexedDBCatalogRepository(dbPromise),
     scanEventRepository: new IndexedDBScanEventRepository(dbPromise),
     scanSessionRepository: new IndexedDBScanSessionRepository(dbPromise),
+    pHashIndexRepository: new IndexedDBPHashIndexRepository(dbPromise),
   };
 }
 
@@ -65,6 +70,7 @@ function resolvePlatform(): IPlatform {
       storage.cardRepository,
       storage.cardSetRepository,
     ),
+    cardIdentificationService: new LocalPHashIdentifier(storage.pHashIndexRepository),
   };
 }
 

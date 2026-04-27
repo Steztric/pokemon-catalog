@@ -4,6 +4,7 @@ import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { DashboardPage } from "../../presentation/pages/DashboardPage";
 import { ScannerPage } from "../../presentation/pages/ScannerPage";
+import { Layout } from "../../presentation/components/Layout";
 import type { CardDetail } from "../../application/usecases/GetCardDetail";
 
 const { mockUseCatalog } = vi.hoisted(() => ({ mockUseCatalog: vi.fn() }));
@@ -34,6 +35,12 @@ vi.mock("../../infrastructure/platform", () => ({
 // useScanSession also imports platform — mock it to return a stable session
 vi.mock("../../presentation/hooks/useScanSession", () => ({
   useScanSession: () => ({ sessionId: "test-session", cardsScanned: 0, setCardsScanned: vi.fn() }),
+}));
+
+// Layout calls usePHashIndexBuild which hits platform; mock it to control banner state
+const { mockUsePHashIndexBuild } = vi.hoisted(() => ({ mockUsePHashIndexBuild: vi.fn() }));
+vi.mock("../../presentation/hooks/usePHashIndexBuild", () => ({
+  usePHashIndexBuild: mockUsePHashIndexBuild,
 }));
 
 function makeDetail(id: string, name: string): CardDetail {
@@ -107,6 +114,29 @@ describe("DashboardPage", () => {
     mockUseCatalog.mockReturnValue({ data: undefined, isLoading: false, isError: true });
     renderDashboard();
     expect(screen.getByText(/failed to load/i)).toBeInTheDocument();
+  });
+});
+
+describe("Layout", () => {
+  it("shows the index-refresh banner while building", () => {
+    mockUsePHashIndexBuild.mockReturnValue({ isBuilding: true });
+    render(
+      <MemoryRouter>
+        <Layout />
+      </MemoryRouter>
+    );
+    expect(screen.getByRole("status")).toBeInTheDocument();
+    expect(screen.getByText(/rebuilding card index/i)).toBeInTheDocument();
+  });
+
+  it("hides the banner when not building", () => {
+    mockUsePHashIndexBuild.mockReturnValue({ isBuilding: false });
+    render(
+      <MemoryRouter>
+        <Layout />
+      </MemoryRouter>
+    );
+    expect(screen.queryByRole("status")).toBeNull();
   });
 });
 

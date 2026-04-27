@@ -5,8 +5,10 @@ import {
   StubCatalogRepository,
   StubScanEventRepository,
   StubScanSessionRepository,
+  StubPHashIndexRepository,
 } from "../db/StubRepositories";
 import { StubPokemonCardDataProvider } from "../api/StubPokemonCardDataProvider";
+import { StubCardIdentificationService } from "../vision/StubCardIdentificationService";
 
 class StubImageCacheAdapter implements IImageCacheAdapter {
   async get(_cardId: string): Promise<string | null> {
@@ -39,6 +41,7 @@ function buildStubStorage(): IStorageAdapter {
     catalogRepository: new StubCatalogRepository(),
     scanEventRepository: new StubScanEventRepository(),
     scanSessionRepository: new StubScanSessionRepository(),
+    pHashIndexRepository: new StubPHashIndexRepository(),
   };
 }
 
@@ -47,4 +50,5 @@ export const stubPlatform: IPlatform = {
   imageCache: new StubImageCacheAdapter(),
   camera: new StubCameraAdapter(),
   cardDataProvider: new StubPokemonCardDataProvider(),
+  cardIdentificationService: new StubCardIdentificationService(),
 };
