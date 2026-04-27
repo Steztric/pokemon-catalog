@@ -1,5 +1,6 @@
 import type { IPlatform, IStorageAdapter } from "../../domain/interfaces";
 import { stubPlatform } from "./StubPlatform";
+import { WebRTCCameraAdapter } from "../camera/WebRTCCameraAdapter";
 import { PokemonTCGApiClient } from "../api/PokemonTCGApiClient";
 import { CachingCardDataProvider } from "../api/CachingCardDataProvider";
 import { TauriSQLiteDatabase } from "../db/TauriSQLiteDatabase";
@@ -58,7 +59,7 @@ function resolvePlatform(): IPlatform {
   return {
     storage,
     imageCache: stubPlatform.imageCache,
-    camera: stubPlatform.camera,
+    camera: new WebRTCCameraAdapter(),
     cardDataProvider: new CachingCardDataProvider(
       new PokemonTCGApiClient(),
       storage.cardRepository,

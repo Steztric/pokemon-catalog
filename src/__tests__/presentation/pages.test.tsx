@@ -11,6 +11,31 @@ vi.mock("../../presentation/hooks/useCatalog", () => ({
   useCatalog: mockUseCatalog,
 }));
 
+// ScannerPage imports platform directly; mock it to avoid IndexedDB / camera init
+vi.mock("../../infrastructure/platform", () => ({
+  platform: {
+    storage: {
+      scanSessionRepository: {
+        save: vi.fn().mockResolvedValue(undefined),
+        findById: vi.fn().mockResolvedValue(null),
+        update: vi.fn().mockResolvedValue(undefined),
+      },
+    },
+    camera: {
+      getStream: vi.fn().mockRejectedValue(new Error("no camera in tests")),
+      listDevices: vi.fn().mockResolvedValue([]),
+      selectDevice: vi.fn().mockResolvedValue(undefined),
+      captureFrame: vi.fn().mockReturnValue(new ImageData(1, 1)),
+      stop: vi.fn(),
+    },
+  },
+}));
+
+// useScanSession also imports platform — mock it to return a stable session
+vi.mock("../../presentation/hooks/useScanSession", () => ({
+  useScanSession: () => ({ sessionId: "test-session", cardsScanned: 0, setCardsScanned: vi.fn() }),
+}));
+
 function makeDetail(id: string, name: string): CardDetail {
   return {
     card: {
@@ -102,5 +127,14 @@ describe("ScannerPage", () => {
       </MemoryRouter>
     );
     expect(screen.getByRole("link", { name: /dashboard/i })).toBeInTheDocument();
+  });
+
+  it("shows the session tally", () => {
+    render(
+      <MemoryRouter>
+        <ScannerPage />
+      </MemoryRouter>
+    );
+    expect(screen.getByText(/cards scanned this session/i)).toBeInTheDocument();
   });
 });

@@ -1,11 +1,19 @@
 import type { IStorageAdapter } from "../../domain/interfaces";
+import type { ScanSession } from "../../domain/entities";
 
 export interface StartScanSessionOutput {
   sessionId: string;
 }
 
 export async function startScanSession(
-  _storage: IStorageAdapter
+  storage: IStorageAdapter,
 ): Promise<StartScanSessionOutput> {
-  return { sessionId: "" };
+  const session: ScanSession = {
+    id: crypto.randomUUID(),
+    startedAt: new Date(),
+    endedAt: null,
+    cardsScanned: 0,
+  };
+  await storage.scanSessionRepository.save(session);
+  return { sessionId: session.id };
 }

@@ -5,19 +5,22 @@
      The /project-status command reads this file to report status. -->
 
 last_updated: 2026-04-26
-current_phase: 6
+current_phase: 7
 overall_status: in_progress
 
 ---
 
 ## Current Focus
 
-Phase 5 (Collection Dashboard) is complete. The `DashboardPage` now queries the catalog via
-`useCatalog` (TanStack Query) and renders cards in a grid or list view with full filter/sort
-controls. Filter and sort state lives in URL search params; grid/list preference persists to
-`localStorage`. 146 tests passing.
+Phase 6 (Webcam Feed and Card Presence Detection) is complete. `WebRTCCameraAdapter`
+implements `ICameraAdapter` via `getUserMedia`. `CardPresenceDetector` runs a Sobel-edge /
+density-bin rectangle detector at ~4 fps and signals stable detection after 3 consistent
+frames. `preprocessFrame` crops and normalises the detected region to a 300×420 `ImageFrame`.
+`StartScanSession` and `EndScanSession` use cases are fully implemented. `ScannerPage`
+rewritten with live video feed, canvas overlay, camera selector, error state, and session tally.
+161 tests passing.
 
-Next: Phase 6 — Webcam Feed and Card Presence Detection.
+Next: Phase 7 — Local pHash Card Identification.
 
 ---
 
@@ -30,7 +33,7 @@ Next: Phase 6 — Webcam Feed and Card Presence Detection.
 | 3 | Pokemon TCG API Integration | complete | 2026-04-25 |
 | 4 | Local Persistence Layer | complete | 2026-04-25 |
 | 5 | Collection Dashboard | complete | 2026-04-26 |
-| 6 | Webcam Feed and Card Presence Detection | not-started | — |
+| 6 | Webcam Feed and Card Presence Detection | complete | 2026-04-26 |
 | 7 | Local pHash Card Identification | not-started | — |
 | 8 | LLM Vision Fallback | not-started | — |
 | 9 | Scan Confirmation Flow and Catalog Management | not-started | — |
@@ -93,9 +96,17 @@ Status values: `not-started` | `in-progress` | `complete` | `blocked`
   Total: 146 tests passing.
 
 ### Phase 6 — Webcam Feed and Card Presence Detection
-- Status: not-started
-- Blockers: Phase 4 must be complete
-- Notes: —
+- Status: complete
+- Blockers: none
+- Notes: `WebRTCCameraAdapter` wraps `getUserMedia`; enumerates devices and supports device
+  switching. `CardPresenceDetector` downsamples to half resolution, applies Sobel edge
+  detection, uses 20×20 density bins to locate the largest high-edge region, validates aspect
+  ratio (0.714 ± 0.18) and area fraction (4–85%). Stability requires 3 consecutive frames
+  with ≥70% IoU overlap. `preprocessFrame` renders the detected bounds at 300×420 via canvas.
+  `StartScanSession` / `EndScanSession` use cases persist `ScanSession` records. `ScannerPage`
+  rewritten with live video, canvas overlay (yellow = detecting, green = stable), camera
+  selector, camera-error state with retry, and session tally. `useScanSession` hook starts/
+  ends sessions on mount/unmount. 15 new tests. Total: 161 tests passing.
 
 ### Phase 7 — Local pHash Card Identification
 - Status: not-started
