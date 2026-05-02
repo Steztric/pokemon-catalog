@@ -4,28 +4,29 @@
      Update it at the end of each phase or significant sub-task.
      The /project-status command reads this file to report status. -->
 
-last_updated: 2026-04-28
-current_phase: 9
+last_updated: 2026-05-02
+current_phase: 10
 overall_status: in_progress
 
 ---
 
 ## Current Focus
 
-Phase 8 (LLM Vision Fallback) is complete. `AnthropicVisionClient` encodes an `ImageFrame`
-to base64 JPEG and sends it to `claude-sonnet-4-6` via the Anthropic messages API with a
-structured prompt requesting `{cardName, setName, cardNumber}` JSON; parse errors and HTTP
-failures return null. `HybridIdentificationService` wraps `LocalPHashIdentifier` and
-`AnthropicVisionClient`: local pHash runs first; if the result is `low_confidence` and a
-key is present, the LLM is called; the LLM result is resolved via
-`IPokemonCardDataProvider.searchCards()` filtered by set name and card number — a unique
-match returns `identified` with `strategy:"llm_vision"`, otherwise `low_confidence` is
-returned. `HybridIdentificationService` registered as the live `ICardIdentificationService`
-in `platform/index.ts`; if `VITE_ANTHROPIC_API_KEY` is absent the LLM step is silently
-skipped. 15 new tests (7 `AnthropicVisionClient`, 8 `HybridIdentificationService`).
-Total: 214 tests passing.
+Phase 9 (Scan Confirmation Flow and Catalog Management) is complete. `addCardToCatalog`
+fully implemented: caches card metadata via `ICardRepository` (fetches from API if absent),
+upserts `CatalogEntry` (create at qty 1 or increment), writes a confirmed `ScanEvent`, and
+increments `ScanSession.cardsScanned`. `confirmScan` delegates to `addCardToCatalog`.
+`rejectScan` is a no-op. `ConfirmationPanel` component overlays the camera feed on stable
+detection: shows card image, name, set, rarity, confidence, strategy, duplicate badge (with
+current quantity), and low-confidence badge. Two primary actions — Confirm and Reject — plus
+a "Search manually" mode with debounced `searchCards()` and result list. `ScannerPage`
+extended with the confirmation phase (`{ confirming: ConfirmationData }`), `handleConfirm`
+(async: adds to catalog, increments session tally, refreshes log), `handleReject` (resumes
+detection loop), and a collapsible session scan log showing confirmed cards with thumbnail,
+name, set, and time. 20 new tests (9 AddCardToCatalog/ConfirmScan/RejectScan, 11
+ConfirmationPanel). Total: 234 tests passing.
 
-Next: Phase 9 — Scan Confirmation Flow and Catalog Management.
+Next: Phase 10 — Image Caching and Offline Support.
 
 ---
 
@@ -41,7 +42,7 @@ Next: Phase 9 — Scan Confirmation Flow and Catalog Management.
 | 6 | Webcam Feed and Card Presence Detection | complete | 2026-04-26 |
 | 7 | Local pHash Card Identification | complete | 2026-04-27 |
 | 8 | LLM Vision Fallback | complete | 2026-04-28 |
-| 9 | Scan Confirmation Flow and Catalog Management | not-started | — |
+| 9 | Scan Confirmation Flow and Catalog Management | complete | 2026-05-02 |
 | 10 | Image Caching and Offline Support | not-started | — |
 | 11 | Settings, Error Handling, and Polish | not-started | — |
 
@@ -140,9 +141,15 @@ Status values: `not-started` | `in-progress` | `complete` | `blocked`
   15 new tests. Total: 214 tests passing.
 
 ### Phase 9 — Scan Confirmation Flow and Catalog Management
-- Status: not-started
-- Blockers: Phases 4, 7, and 8 must be complete
-- Notes: —
+- Status: complete
+- Blockers: none
+- Notes: `addCardToCatalog` fully implemented (cache card metadata, upsert catalog entry,
+  write confirmed ScanEvent, increment session count). `confirmScan` delegates to it;
+  `rejectScan` is a no-op. `ConfirmationPanel` component overlays camera feed: shows card
+  image/details, low-confidence and duplicate badges, Confirm + Reject + Search manually
+  (debounced search mode with result list). `ScannerPage` extended with confirmation phase,
+  confirmation handlers, and collapsible session scan log. 20 new tests.
+  Total: 234 tests passing.
 
 ### Phase 10 — Image Caching and Offline Support
 - Status: not-started

@@ -21,6 +21,19 @@ vi.mock("../../infrastructure/platform", () => ({
         findById: vi.fn().mockResolvedValue(null),
         update: vi.fn().mockResolvedValue(undefined),
       },
+      scanEventRepository: {
+        findBySession: vi.fn().mockResolvedValue([]),
+        save: vi.fn().mockResolvedValue(undefined),
+      },
+      cardRepository: {
+        findById: vi.fn().mockResolvedValue(null),
+        upsert: vi.fn().mockResolvedValue(undefined),
+      },
+      catalogRepository: {
+        findByCardId: vi.fn().mockResolvedValue(null),
+        save: vi.fn().mockResolvedValue(undefined),
+        incrementQuantity: vi.fn().mockResolvedValue(undefined),
+      },
     },
     camera: {
       getStream: vi.fn().mockRejectedValue(new Error("no camera in tests")),
@@ -28,6 +41,9 @@ vi.mock("../../infrastructure/platform", () => ({
       selectDevice: vi.fn().mockResolvedValue(undefined),
       captureFrame: vi.fn().mockReturnValue(new ImageData(1, 1)),
       stop: vi.fn(),
+    },
+    cardDataProvider: {
+      searchCards: vi.fn().mockResolvedValue([]),
     },
   },
 }));
