@@ -8,14 +8,18 @@ import { useScanSession } from "../hooks/useScanSession";
 
 const CAPTURE_INTERVAL_MS = 250; // ~4 fps
 const CORNER_LEN = 20;
-const RESULT_DISPLAY_MS = 4000;
+
+// Single discriminated union — one setState call per tick, no intermediate renders.
+type Phase =
+  | "idle"         // nothing in guide
+  | "detecting"    // card present, building stability
+  | "identifying"  // stable, identification in progress
+  | { result: IdentificationResult }; // done
 
 function drawGuide(
   canvas: HTMLCanvasElement,
   video: HTMLVideoElement,
-  detected: boolean,
-  stable: boolean,
-  identifying: boolean,
+  phase: Phase,
 ) {
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
@@ -32,13 +36,12 @@ function drawGuide(
   ctx.fillRect(0, y, x, h);
   ctx.fillRect(x + w, y, canvas.width - x - w, h);
 
-  const color = identifying
-    ? "rgba(255,255,255,0.9)"
-    : stable
-    ? "#22c55e"
-    : detected
-    ? "#facc15"
-    : "rgba(255,255,255,0.6)";
+  const color =
+    phase === "identifying" || typeof phase === "object"
+      ? "#22c55e"
+      : phase === "detecting"
+      ? "#facc15"
+      : "rgba(255,255,255,0.6)";
 
   ctx.strokeStyle = color;
   ctx.lineWidth = 2;
@@ -58,23 +61,51 @@ function drawGuide(
   }
 }
 
+function statusLabel(phase: Phase): string {
+  if (phase === "identifying") return "Identifying…";
+  if (typeof phase === "object") {
+    const r = phase.result;
+    if (r.status === "identified") return `Match: ${r.cardId ?? "unknown"}`;
+    return "Low confidence — remove and retry";
+  }
+  if (phase === "detecting") return "Detecting…";
+  return "Align card within guide";
+}
+
+function statusColor(phase: Phase): string {
+  if (typeof phase === "object") {
+    return phase.result.status === "identified"
+      ? "bg-green-600 text-white"
+      : "bg-orange-400 text-white";
+  }
+  if (phase === "identifying" || phase === "detecting") return "bg-green-600 text-white";
+  return "bg-black/50 text-white/70";
+}
+
 export function ScannerPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const detectorRef = useRef(new CardPresenceDetector());
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const identifyingRef = useRef(false);
-  const resultTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const capturedFrameRef = useRef<ImageData | null>(null);
+
+  // Refs that the interval closure reads — avoids stale captures.
+  const phaseRef = useRef<Phase>("idle");
+  const identifyingRef = useRef(false); // true while async identification is running
+  const hasResultRef = useRef(false);   // true while a result is displayed
 
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState<string>("");
   const [cameraError, setCameraError] = useState<string | null>(null);
-  const [detected, setDetected] = useState(false);
-  const [isStable, setIsStable] = useState(false);
-  const [isIdentifying, setIsIdentifying] = useState(false);
-  const [identResult, setIdentResult] = useState<IdentificationResult | null>(null);
+  const [phase, setPhase] = useState<Phase>("idle");
 
   const { cardsScanned } = useScanSession();
+
+  // Keep phaseRef in sync whenever React state updates.
+  function setPhaseSync(next: Phase) {
+    phaseRef.current = next;
+    setPhase(next);
+  }
 
   const startCamera = useCallback(async (deviceId?: string) => {
     setCameraError(null);
@@ -95,14 +126,18 @@ export function ScannerPage() {
     return () => {
       platform.camera.stop();
       if (intervalRef.current) clearInterval(intervalRef.current);
-      if (resultTimerRef.current) clearTimeout(resultTimerRef.current);
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const startDetectionLoop = useCallback(() => {
     if (intervalRef.current) clearInterval(intervalRef.current);
+
     detectorRef.current.reset();
+    capturedFrameRef.current = null;
     identifyingRef.current = false;
+    hasResultRef.current = false;
+    setPhaseSync("idle");
+
     intervalRef.current = setInterval(() => {
       const video = videoRef.current;
       const canvas = canvasRef.current;
@@ -110,27 +145,58 @@ export function ScannerPage() {
 
       const frame = platform.camera.captureFrame(video);
       const result = detectorRef.current.detect(frame);
-      setDetected(result.detected);
-      setIsStable(result.stable);
-      drawGuide(canvas, video, result.detected, result.stable, identifyingRef.current);
 
-      if (result.stable && result.bounds && !identifyingRef.current) {
-        identifyingRef.current = true;
-        setIsIdentifying(true);
-        const preprocessed = preprocessFrame(frame, result.bounds);
-        platform.cardIdentificationService.identify(preprocessed).then((r) => {
-          setIdentResult(r);
-          setIsIdentifying(false);
-          resultTimerRef.current = setTimeout(() => {
-            setIdentResult(null);
-            identifyingRef.current = false;
-            detectorRef.current.reset();
-          }, RESULT_DISPLAY_MS);
-        }).catch(() => {
-          setIsIdentifying(false);
+      if (!result.detected) {
+        // Card left the frame — reset so the next placement starts fresh.
+        if (phaseRef.current !== "idle") {
+          detectorRef.current.reset();
+          capturedFrameRef.current = null;
           identifyingRef.current = false;
-        });
+          hasResultRef.current = false;
+          setPhaseSync("idle");
+          drawGuide(canvas, video, "idle");
+        }
+        return;
       }
+
+      // Card is present. If a result is already showing or identification is
+      // in flight, leave the display alone — don't cycle back to "detecting".
+      if (identifyingRef.current || hasResultRef.current) {
+        return;
+      }
+
+      if (!result.stable) {
+        if (phaseRef.current !== "detecting") {
+          setPhaseSync("detecting");
+          drawGuide(canvas, video, "detecting");
+        }
+        return;
+      }
+
+      // Stable new detection — kick off identification exactly once.
+      identifyingRef.current = true;
+      capturedFrameRef.current = frame;
+      setPhaseSync("identifying");
+      drawGuide(canvas, video, "identifying");
+
+      const preprocessed = preprocessFrame(frame, result.bounds!);
+      console.log(`[scanner] stable detection — frame captured (${preprocessed.width}×${preprocessed.height}), starting identification…`);
+      platform.cardIdentificationService.identify(preprocessed)
+        .then((r) => {
+          console.log(`[scanner] identification complete: status=${r.status} cardId=${r.cardId ?? "—"} strategy=${r.strategy} conf=${r.confidence.toFixed(3)}`);
+          identifyingRef.current = false;
+          hasResultRef.current = true;
+          setPhaseSync({ result: r });
+          if (canvas && video) drawGuide(canvas, video, { result: r });
+        })
+        .catch((err) => {
+          console.log("[scanner] identification threw:", err);
+          identifyingRef.current = false;
+          hasResultRef.current = false;
+          detectorRef.current.reset();
+          setPhaseSync("idle");
+          if (canvas && video) drawGuide(canvas, video, "idle");
+        });
     }, CAPTURE_INTERVAL_MS);
   }, []);
 
@@ -138,25 +204,6 @@ export function ScannerPage() {
     const id = e.target.value;
     setSelectedDeviceId(id);
     startCamera(id);
-  }
-
-  function statusLabel(): string {
-    if (isIdentifying) return "Identifying…";
-    if (identResult) {
-      if (identResult.status === "identified") return `Match: ${identResult.cardId ?? "unknown"}`;
-      return "Low confidence — hold still";
-    }
-    if (isStable) return "Card detected";
-    if (detected) return "Detecting…";
-    return "Align card within guide";
-  }
-
-  function statusColor(): string {
-    if (identResult?.status === "identified") return "bg-green-600 text-white";
-    if (identResult?.status === "low_confidence") return "bg-orange-400 text-white";
-    if (isIdentifying || isStable) return "bg-green-600 text-white";
-    if (detected) return "bg-yellow-400 text-yellow-900";
-    return "bg-black/50 text-white/70";
   }
 
   return (
@@ -219,8 +266,8 @@ export function ScannerPage() {
             aria-hidden="true"
           />
           <div className="absolute bottom-3 left-0 right-0 flex justify-center pointer-events-none">
-            <span className={`rounded px-3 py-1 text-xs font-medium ${statusColor()}`}>
-              {statusLabel()}
+            <span className={`rounded px-3 py-1 text-xs font-medium ${statusColor(phase)}`}>
+              {statusLabel(phase)}
             </span>
           </div>
         </div>

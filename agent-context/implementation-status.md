@@ -4,26 +4,28 @@
      Update it at the end of each phase or significant sub-task.
      The /project-status command reads this file to report status. -->
 
-last_updated: 2026-04-27
-current_phase: 8
+last_updated: 2026-04-28
+current_phase: 9
 overall_status: in_progress
 
 ---
 
 ## Current Focus
 
-Phase 7 (Local pHash Card Identification) is complete. `computePHash` implements DCT-based
-64-bit perceptual hashing (32×32 grayscale resize → 2D DCT → top-left 8×8 block → median
-threshold). `LocalPHashIdentifier` queries `IPHashIndexRepository` for the closest Hamming
-match; distance ≤ 10 → `identified`, otherwise `low_confidence`. `buildPHashIndex` builds
-the index idempotently from card thumbnail URLs via an injectable `ImageLoader`.
-`IPHashIndexRepository` is backed by SQLite (`phash_index` table, migration 2) and IndexedDB
-(v2 store). `LocalPHashIdentifier` registered as `ICardIdentificationService` in the live
-platform. `ScannerPage` now triggers identification on stable detection, shows
-"Identifying…" during async call, then shows the matched card ID or a low-confidence
-message for 4 seconds before resetting. 192 tests passing.
+Phase 8 (LLM Vision Fallback) is complete. `AnthropicVisionClient` encodes an `ImageFrame`
+to base64 JPEG and sends it to `claude-sonnet-4-6` via the Anthropic messages API with a
+structured prompt requesting `{cardName, setName, cardNumber}` JSON; parse errors and HTTP
+failures return null. `HybridIdentificationService` wraps `LocalPHashIdentifier` and
+`AnthropicVisionClient`: local pHash runs first; if the result is `low_confidence` and a
+key is present, the LLM is called; the LLM result is resolved via
+`IPokemonCardDataProvider.searchCards()` filtered by set name and card number — a unique
+match returns `identified` with `strategy:"llm_vision"`, otherwise `low_confidence` is
+returned. `HybridIdentificationService` registered as the live `ICardIdentificationService`
+in `platform/index.ts`; if `VITE_ANTHROPIC_API_KEY` is absent the LLM step is silently
+skipped. 15 new tests (7 `AnthropicVisionClient`, 8 `HybridIdentificationService`).
+Total: 214 tests passing.
 
-Next: Phase 8 — LLM Vision Fallback.
+Next: Phase 9 — Scan Confirmation Flow and Catalog Management.
 
 ---
 
@@ -38,7 +40,7 @@ Next: Phase 8 — LLM Vision Fallback.
 | 5 | Collection Dashboard | complete | 2026-04-26 |
 | 6 | Webcam Feed and Card Presence Detection | complete | 2026-04-26 |
 | 7 | Local pHash Card Identification | complete | 2026-04-27 |
-| 8 | LLM Vision Fallback | not-started | — |
+| 8 | LLM Vision Fallback | complete | 2026-04-28 |
 | 9 | Scan Confirmation Flow and Catalog Management | not-started | — |
 | 10 | Image Caching and Offline Support | not-started | — |
 | 11 | Settings, Error Handling, and Polish | not-started | — |
@@ -128,9 +130,14 @@ Status values: `not-started` | `in-progress` | `complete` | `blocked`
   Total: 192 tests passing.
 
 ### Phase 8 — LLM Vision Fallback
-- Status: not-started
-- Blockers: Phase 7 must be complete
-- Notes: —
+- Status: complete
+- Blockers: none
+- Notes: `AnthropicVisionClient` posts base64 JPEG frames to `claude-sonnet-4-6` and parses
+  structured JSON card identification results. `HybridIdentificationService` composes local
+  pHash and LLM strategies: pHash first, LLM fallback on low confidence. LLM result resolved
+  via `searchCards()` filtered by set name + card number; unique match → identified.
+  Gracefully degrades with no API key. Wired as live `ICardIdentificationService`.
+  15 new tests. Total: 214 tests passing.
 
 ### Phase 9 — Scan Confirmation Flow and Catalog Management
 - Status: not-started

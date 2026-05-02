@@ -13,7 +13,10 @@ export class LocalPHashIdentifier implements ICardIdentificationService {
     const queryHash = computePHash(frame);
     const entries = await this.repo.findAll();
 
+    console.log(`[pHash] index size=${entries.length}`);
+
     if (entries.length === 0) {
+      console.log("[pHash] → low_confidence (empty index)");
       return { status: "low_confidence", confidence: 0, strategy: "local_hash" };
     }
 
@@ -29,10 +32,13 @@ export class LocalPHashIdentifier implements ICardIdentificationService {
     }
 
     const confidence = 1 - bestDistance / HASH_BITS;
+    console.log(`[pHash] bestDist=${bestDistance} bestCardId=${bestCardId} conf=${confidence.toFixed(3)}`);
 
     if (bestDistance <= HIGH_CONFIDENCE_MAX_DISTANCE) {
+      console.log(`[pHash] → identified (${bestCardId})`);
       return { status: "identified", cardId: bestCardId, confidence, strategy: "local_hash" };
     }
+    console.log("[pHash] → low_confidence (distance too high)");
     return { status: "low_confidence", cardId: bestCardId, confidence, strategy: "local_hash" };
   }
 }

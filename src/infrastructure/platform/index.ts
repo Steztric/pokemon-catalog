@@ -24,6 +24,8 @@ import {
   IndexedDBPHashIndexRepository,
 } from "../db/IndexedDBRepositories";
 import { LocalPHashIdentifier } from "../vision/localPHashIdentifier";
+import { AnthropicVisionClient } from "../vision/anthropicVisionClient";
+import { HybridIdentificationService } from "../vision/hybridIdentificationService";
 
 function isTauri(): boolean {
   return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
@@ -61,16 +63,25 @@ function buildBrowserStorage(): IStorageAdapter {
 
 function resolvePlatform(): IPlatform {
   const storage = isTauri() ? buildTauriStorage() : buildBrowserStorage();
+  const cardDataProvider = new CachingCardDataProvider(
+    new PokemonTCGApiClient(),
+    storage.cardRepository,
+    storage.cardSetRepository,
+  );
+  const apiKey =
+    typeof import.meta !== "undefined" ? (import.meta.env?.VITE_ANTHROPIC_API_KEY as string | undefined) : undefined;
+  const llmClient = apiKey ? new AnthropicVisionClient(apiKey) : null;
+  const cardIdentificationService = new HybridIdentificationService(
+    new LocalPHashIdentifier(storage.pHashIndexRepository),
+    llmClient,
+    cardDataProvider,
+  );
   return {
     storage,
     imageCache: stubPlatform.imageCache,
     camera: new WebRTCCameraAdapter(),
-    cardDataProvider: new CachingCardDataProvider(
-      new PokemonTCGApiClient(),
-      storage.cardRepository,
-      storage.cardSetRepository,
-    ),
-    cardIdentificationService: new LocalPHashIdentifier(storage.pHashIndexRepository),
+    cardDataProvider,
+    cardIdentificationService,
   };
 }
 

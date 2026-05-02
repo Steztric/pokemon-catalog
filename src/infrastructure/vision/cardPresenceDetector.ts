@@ -126,12 +126,20 @@ export class CardPresenceDetector {
     this.history.push(bounds);
     if (this.history.length > STABILITY_FRAMES) this.history.shift();
 
-    if (!detected) return { detected: false, bounds: null, stable: false, debug };
+    if (!detected) {
+      console.log(
+        `[detect] inner=${innerDensity.toFixed(3)} outer=${outerDensity.toFixed(3)} ratio=${ratio.toFixed(2)} → REJECT(${rejectReason})`,
+      );
+      return { detected: false, bounds: null, stable: false, debug };
+    }
 
     const stable =
       this.history.length === STABILITY_FRAMES &&
       this.history.every((h) => h !== null && iou(guide, h) >= STABILITY_OVERLAP_THRESHOLD);
 
+    console.log(
+      `[detect] inner=${innerDensity.toFixed(3)} outer=${outerDensity.toFixed(3)} ratio=${ratio.toFixed(2)} → DETECTED (stable=${stable}, history=${this.history.length}/${STABILITY_FRAMES})`,
+    );
     return { detected: true, bounds: guide, stable, debug };
   }
 
