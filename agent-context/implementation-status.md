@@ -5,28 +5,30 @@
      The /project-status command reads this file to report status. -->
 
 last_updated: 2026-05-02
-current_phase: 10
+current_phase: 11
 overall_status: in_progress
 
 ---
 
 ## Current Focus
 
-Phase 9 (Scan Confirmation Flow and Catalog Management) is complete. `addCardToCatalog`
-fully implemented: caches card metadata via `ICardRepository` (fetches from API if absent),
-upserts `CatalogEntry` (create at qty 1 or increment), writes a confirmed `ScanEvent`, and
-increments `ScanSession.cardsScanned`. `confirmScan` delegates to `addCardToCatalog`.
-`rejectScan` is a no-op. `ConfirmationPanel` component overlays the camera feed on stable
-detection: shows card image, name, set, rarity, confidence, strategy, duplicate badge (with
-current quantity), and low-confidence badge. Two primary actions — Confirm and Reject — plus
-a "Search manually" mode with debounced `searchCards()` and result list. `ScannerPage`
-extended with the confirmation phase (`{ confirming: ConfirmationData }`), `handleConfirm`
-(async: adds to catalog, increments session tally, refreshes log), `handleReject` (resumes
-detection loop), and a collapsible session scan log showing confirmed cards with thumbnail,
-name, set, and time. 20 new tests (9 AddCardToCatalog/ConfirmScan/RejectScan, 11
-ConfirmationPanel). Total: 234 tests passing.
+Phase 10 (Image Caching and Offline Support) is complete. `IFileSystem` abstraction
+introduced for testable filesystem operations. `FilesystemImageCacheAdapter` implements
+`IImageCacheAdapter` against an injectable `IFileSystem`; production wired via
+`TauriFileSystem` (wraps `@tauri-apps/plugin-fs` — `readFile`, `writeFile`, `exists`,
+`mkdir`, `appLocalDataDir`, `convertFileSrc`). `BrowserImageCacheAdapter` uses the browser
+Cache API with graceful degradation when `caches` is unavailable. Both adapters wired in
+`platform/index.ts` (Tauri → filesystem, browser → Cache API); stub removed.
+`addCardToCatalog` and `confirmScan` updated to accept `IImageCacheAdapter` and pre-cache
+card images via `fetch` after confirming a scan (non-fatal on failure). `useCardImage` hook
+resolves cached URLs asynchronously, falling back to the remote URL. `CardTile` and
+`CardList` use `useCardImage`; `ScannerPage.handleConfirm` passes `platform.imageCache`.
+`@tauri-apps/plugin-fs` added to npm and Cargo; plugin registered in `lib.rs`; fs
+permissions added to capabilities. 22 new tests (9 FilesystemImageCacheAdapter, 6
+BrowserImageCacheAdapter, 4 useCardImage, 3 new AddCardToCatalog image-caching paths).
+Total: 256 tests passing.
 
-Next: Phase 10 — Image Caching and Offline Support.
+Next: Phase 11 — Settings, Error Handling, and Polish.
 
 ---
 
@@ -43,7 +45,7 @@ Next: Phase 10 — Image Caching and Offline Support.
 | 7 | Local pHash Card Identification | complete | 2026-04-27 |
 | 8 | LLM Vision Fallback | complete | 2026-04-28 |
 | 9 | Scan Confirmation Flow and Catalog Management | complete | 2026-05-02 |
-| 10 | Image Caching and Offline Support | not-started | — |
+| 10 | Image Caching and Offline Support | complete | 2026-05-02 |
 | 11 | Settings, Error Handling, and Polish | not-started | — |
 
 Status values: `not-started` | `in-progress` | `complete` | `blocked`
@@ -152,9 +154,14 @@ Status values: `not-started` | `in-progress` | `complete` | `blocked`
   Total: 234 tests passing.
 
 ### Phase 10 — Image Caching and Offline Support
-- Status: not-started
-- Blockers: Phase 9 must be complete
-- Notes: —
+- Status: complete
+- Blockers: none
+- Notes: `FilesystemImageCacheAdapter` uses injectable `IFileSystem` for testability; production
+  wired via `TauriFileSystem` using `@tauri-apps/plugin-fs`. `BrowserImageCacheAdapter` uses
+  Cache API with graceful degradation. `addCardToCatalog` and `confirmScan` updated to accept
+  and use `IImageCacheAdapter`; image pre-population is non-fatal. `useCardImage` hook in
+  presentation layer resolves cached URLs, falling back to remote URL. `CardTile` and
+  `CardList` use `useCardImage`. 22 new tests. Total: 256 tests passing.
 
 ### Phase 11 — Settings, Error Handling, and Polish
 - Status: not-started

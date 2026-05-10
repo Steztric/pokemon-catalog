@@ -1,10 +1,10 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { addCardToCatalog } from "../../application/usecases/AddCardToCatalog";
 import { confirmScan } from "../../application/usecases/ConfirmScan";
 import { rejectScan } from "../../application/usecases/RejectScan";
 import { startScanSession } from "../../application/usecases/StartScanSession";
 import { StubPokemonCardDataProvider } from "../../infrastructure/api/StubPokemonCardDataProvider";
-import type { IStorageAdapter } from "../../domain/interfaces";
+import type { IStorageAdapter, IImageCacheAdapter } from "../../domain/interfaces";
 import { createSqlTestDatabase } from "../infrastructure/sqlTestDatabase";
 import { runMigrations } from "../../infrastructure/db/migrations";
 import type { IDatabase } from "../../infrastructure/db/IDatabase";
@@ -35,6 +35,14 @@ function migratedDb(): Promise<IDatabase> {
   });
 }
 
+function makeImageCache(hasCached = false): IImageCacheAdapter {
+  return {
+    get: vi.fn().mockResolvedValue(hasCached ? "blob:cached" : null),
+    set: vi.fn().mockResolvedValue(undefined),
+    has: vi.fn().mockResolvedValue(hasCached),
+  };
+}
+
 const CARD_ID = "base1-4"; // Charizard — present in StubPokemonCardDataProvider
 
 describe("addCardToCatalog", () => {
@@ -48,8 +56,13 @@ describe("addCardToCatalog", () => {
     sessionId = out.sessionId;
   });
 
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it("creates a new catalog entry with quantity 1 on first scan", async () => {
-    await addCardToCatalog(storage, provider, { cardId: CARD_ID, sessionId });
+    const imageCache = makeImageCache();
+    await addCardToCatalog(storage, provider, imageCache, { cardId: CARD_ID, sessionId });
     const entry = await storage.catalogRepository.findByCardId(CARD_ID);
     expect(entry).not.toBeNull();
     expect(entry!.quantity).toBe(1);
@@ -57,31 +70,34 @@ describe("addCardToCatalog", () => {
   });
 
   it("increments quantity on duplicate scan", async () => {
-    await addCardToCatalog(storage, provider, { cardId: CARD_ID, sessionId });
-    await addCardToCatalog(storage, provider, { cardId: CARD_ID, sessionId });
+    const imageCache = makeImageCache();
+    await addCardToCatalog(storage, provider, imageCache, { cardId: CARD_ID, sessionId });
+    await addCardToCatalog(storage, provider, imageCache, { cardId: CARD_ID, sessionId });
     const entry = await storage.catalogRepository.findByCardId(CARD_ID);
     expect(entry!.quantity).toBe(2);
   });
 
   it("caches card metadata locally", async () => {
-    await addCardToCatalog(storage, provider, { cardId: CARD_ID, sessionId });
+    const imageCache = makeImageCache();
+    await addCardToCatalog(storage, provider, imageCache, { cardId: CARD_ID, sessionId });
     const card = await storage.cardRepository.findById(CARD_ID);
     expect(card).not.toBeNull();
     expect(card!.name).toBe("Charizard");
   });
 
   it("does not re-fetch if card is already cached", async () => {
+    const imageCache = makeImageCache();
     // Pre-populate cache
     const card = await provider.getCard(CARD_ID);
     await storage.cardRepository.upsert(card);
-    // Should succeed without throwing even if provider returned stale data
     await expect(
-      addCardToCatalog(storage, provider, { cardId: CARD_ID, sessionId }),
+      addCardToCatalog(storage, provider, imageCache, { cardId: CARD_ID, sessionId }),
     ).resolves.toBeDefined();
   });
 
   it("writes a confirmed scan event", async () => {
-    await addCardToCatalog(storage, provider, { cardId: CARD_ID, sessionId });
+    const imageCache = makeImageCache();
+    await addCardToCatalog(storage, provider, imageCache, { cardId: CARD_ID, sessionId });
     const events = await storage.scanEventRepository.findBySession(sessionId);
     expect(events).toHaveLength(1);
     expect(events[0].cardId).toBe(CARD_ID);
@@ -89,17 +105,44 @@ describe("addCardToCatalog", () => {
   });
 
   it("increments the session cardsScanned count", async () => {
-    await addCardToCatalog(storage, provider, { cardId: CARD_ID, sessionId });
+    const imageCache = makeImageCache();
+    await addCardToCatalog(storage, provider, imageCache, { cardId: CARD_ID, sessionId });
     const session = await storage.scanSessionRepository.findById(sessionId);
     expect(session!.cardsScanned).toBe(1);
   });
 
   it("returns the catalog entry id", async () => {
-    const { catalogEntryId } = await addCardToCatalog(storage, provider, {
+    const imageCache = makeImageCache();
+    const { catalogEntryId } = await addCardToCatalog(storage, provider, imageCache, {
       cardId: CARD_ID,
       sessionId,
     });
     expect(catalogEntryId).toBeTruthy();
+  });
+
+  it("calls imageCache.set when image is not cached and fetch succeeds", async () => {
+    const imageCache = makeImageCache(false);
+    const fakeBuffer = new ArrayBuffer(4);
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      arrayBuffer: vi.fn().mockResolvedValue(fakeBuffer),
+    }));
+    await addCardToCatalog(storage, provider, imageCache, { cardId: CARD_ID, sessionId });
+    expect(imageCache.set).toHaveBeenCalledWith(CARD_ID, fakeBuffer);
+  });
+
+  it("skips imageCache.set when image is already cached", async () => {
+    const imageCache = makeImageCache(true);
+    await addCardToCatalog(storage, provider, imageCache, { cardId: CARD_ID, sessionId });
+    expect(imageCache.set).not.toHaveBeenCalled();
+  });
+
+  it("completes successfully even when image fetch fails", async () => {
+    const imageCache = makeImageCache(false);
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("network error")));
+    await expect(
+      addCardToCatalog(storage, provider, imageCache, { cardId: CARD_ID, sessionId }),
+    ).resolves.toBeDefined();
   });
 });
 
@@ -115,7 +158,8 @@ describe("confirmScan", () => {
   });
 
   it("adds the card to the catalog", async () => {
-    await confirmScan(storage, provider, { cardId: CARD_ID, sessionId });
+    const imageCache = makeImageCache();
+    await confirmScan(storage, provider, imageCache, { cardId: CARD_ID, sessionId });
     const entry = await storage.catalogRepository.findByCardId(CARD_ID);
     expect(entry).not.toBeNull();
     expect(entry!.quantity).toBe(1);

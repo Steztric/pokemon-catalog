@@ -1,4 +1,4 @@
-import type { IStorageAdapter, IPokemonCardDataProvider } from "../../domain/interfaces";
+import type { IStorageAdapter, IPokemonCardDataProvider, IImageCacheAdapter } from "../../domain/interfaces";
 import type { CatalogEntry } from "../../domain/entities";
 
 export interface AddCardToCatalogInput {
@@ -13,6 +13,7 @@ export interface AddCardToCatalogOutput {
 export async function addCardToCatalog(
   storage: IStorageAdapter,
   cardDataProvider: IPokemonCardDataProvider,
+  imageCache: IImageCacheAdapter,
   input: AddCardToCatalogInput,
 ): Promise<AddCardToCatalogOutput> {
   // Ensure card metadata is cached locally
@@ -20,6 +21,19 @@ export async function addCardToCatalog(
   if (!card) {
     card = await cardDataProvider.getCard(input.cardId);
     await storage.cardRepository.upsert(card);
+  }
+
+  // Pre-cache the card image if not already cached
+  if (card.imageUrl && !(await imageCache.has(input.cardId))) {
+    try {
+      const response = await fetch(card.imageUrl);
+      if (response.ok) {
+        const imageData = await response.arrayBuffer();
+        await imageCache.set(input.cardId, imageData);
+      }
+    } catch {
+      // Image caching is non-fatal — offline or network failure should not abort the scan
+    }
   }
 
   // Upsert catalog entry: create at qty 1 or increment

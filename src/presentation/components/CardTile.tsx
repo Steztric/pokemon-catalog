@@ -1,15 +1,17 @@
 import type { CardDetail } from "../../application/usecases/GetCardDetail";
+import { useCardImage } from "../hooks/useCardImage";
 
 interface Props {
   item: CardDetail;
 }
 
 export function CardTile({ item: { card, entry } }: Props) {
+  const imageUrl = useCardImage(card.id, card.imageUrl);
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
       <div className="relative">
         <img
-          src={card.imageUrl}
+          src={imageUrl}
           alt={card.name}
           className="w-full object-contain bg-gray-50"
           loading="lazy"

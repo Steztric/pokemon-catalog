@@ -233,7 +233,7 @@ export function ScannerPage() {
   const handleConfirm = useCallback(async (cardId: string) => {
     if (!sessionId) return;
     try {
-      await addCardToCatalog(platform.storage, platform.cardDataProvider, { cardId, sessionId });
+      await addCardToCatalog(platform.storage, platform.cardDataProvider, platform.imageCache, { cardId, sessionId });
       setCardsScanned(c => c + 1);
       setLogRefreshToken(t => t + 1);
     } catch (err) {

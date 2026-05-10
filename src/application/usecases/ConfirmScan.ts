@@ -1,4 +1,4 @@
-import type { IStorageAdapter, IPokemonCardDataProvider } from "../../domain/interfaces";
+import type { IStorageAdapter, IPokemonCardDataProvider, IImageCacheAdapter } from "../../domain/interfaces";
 import { addCardToCatalog } from "./AddCardToCatalog";
 
 export interface ConfirmScanInput {
@@ -9,7 +9,8 @@ export interface ConfirmScanInput {
 export async function confirmScan(
   storage: IStorageAdapter,
   cardDataProvider: IPokemonCardDataProvider,
+  imageCache: IImageCacheAdapter,
   input: ConfirmScanInput,
 ): Promise<void> {
-  await addCardToCatalog(storage, cardDataProvider, input);
+  await addCardToCatalog(storage, cardDataProvider, imageCache, input);
 }

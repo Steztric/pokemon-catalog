@@ -1,7 +1,35 @@
 import type { CardDetail } from "../../application/usecases/GetCardDetail";
+import { useCardImage } from "../hooks/useCardImage";
 
 interface Props {
   items: CardDetail[];
+}
+
+function CardListRow({ card, entry }: CardDetail) {
+  const imageUrl = useCardImage(card.id, card.imageUrl);
+  return (
+    <tr className="border-b border-gray-100 hover:bg-gray-50">
+      <td className="py-2 pr-4">
+        <div className="flex items-center gap-3">
+          <img
+            src={imageUrl}
+            alt={card.name}
+            className="w-8 object-contain flex-shrink-0"
+            loading="lazy"
+          />
+          <span className="font-medium text-gray-900">{card.name}</span>
+        </div>
+      </td>
+      <td className="py-2 pr-4 text-gray-600">{card.setName}</td>
+      <td className="py-2 pr-4 text-gray-600">{card.number}</td>
+      <td className="py-2 pr-4 text-gray-600">{card.rarity}</td>
+      <td className="py-2 pr-4 text-gray-600">{card.type}</td>
+      <td className="py-2 pr-4 text-gray-600">{entry.quantity}</td>
+      <td className="py-2 text-gray-500">
+        {new Date(entry.firstAddedAt).toLocaleDateString()}
+      </td>
+    </tr>
+  );
 }
 
 export function CardList({ items }: Props) {
@@ -20,31 +48,8 @@ export function CardList({ items }: Props) {
           </tr>
         </thead>
         <tbody>
-          {items.map(({ card, entry }) => (
-            <tr
-              key={entry.id}
-              className="border-b border-gray-100 hover:bg-gray-50"
-            >
-              <td className="py-2 pr-4">
-                <div className="flex items-center gap-3">
-                  <img
-                    src={card.imageUrl}
-                    alt={card.name}
-                    className="w-8 object-contain flex-shrink-0"
-                    loading="lazy"
-                  />
-                  <span className="font-medium text-gray-900">{card.name}</span>
-                </div>
-              </td>
-              <td className="py-2 pr-4 text-gray-600">{card.setName}</td>
-              <td className="py-2 pr-4 text-gray-600">{card.number}</td>
-              <td className="py-2 pr-4 text-gray-600">{card.rarity}</td>
-              <td className="py-2 pr-4 text-gray-600">{card.type}</td>
-              <td className="py-2 pr-4 text-gray-600">{entry.quantity}</td>
-              <td className="py-2 text-gray-500">
-                {new Date(entry.firstAddedAt).toLocaleDateString()}
-              </td>
-            </tr>
+          {items.map((item) => (
+            <CardListRow key={item.entry.id} {...item} />
           ))}
         </tbody>
       </table>

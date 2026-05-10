@@ -45,6 +45,11 @@ vi.mock("../../infrastructure/platform", () => ({
     cardDataProvider: {
       searchCards: vi.fn().mockResolvedValue([]),
     },
+    imageCache: {
+      get: vi.fn().mockResolvedValue(null),
+      set: vi.fn().mockResolvedValue(undefined),
+      has: vi.fn().mockResolvedValue(false),
+    },
   },
 }));
 

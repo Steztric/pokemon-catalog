@@ -1,11 +1,13 @@
 import type { IPlatform, IStorageAdapter } from "../../domain/interfaces";
-import { stubPlatform } from "./StubPlatform";
 import { WebRTCCameraAdapter } from "../camera/WebRTCCameraAdapter";
 import { PokemonTCGApiClient } from "../api/PokemonTCGApiClient";
 import { CachingCardDataProvider } from "../api/CachingCardDataProvider";
 import { TauriSQLiteDatabase } from "../db/TauriSQLiteDatabase";
 import { runMigrations } from "../db/migrations";
 import { homeDir, join } from "@tauri-apps/api/path";
+import { FilesystemImageCacheAdapter } from "../cache/FilesystemImageCacheAdapter";
+import { tauriFileSystem } from "../cache/TauriFileSystem";
+import { BrowserImageCacheAdapter } from "../cache/BrowserImageCacheAdapter";
 import {
   SQLiteCardRepository,
   SQLiteCardSetRepository,
@@ -76,9 +78,12 @@ function resolvePlatform(): IPlatform {
     llmClient,
     cardDataProvider,
   );
+  const imageCache = isTauri()
+    ? new FilesystemImageCacheAdapter(tauriFileSystem)
+    : new BrowserImageCacheAdapter();
   return {
     storage,
-    imageCache: stubPlatform.imageCache,
+    imageCache,
     camera: new WebRTCCameraAdapter(),
     cardDataProvider,
     cardIdentificationService,
