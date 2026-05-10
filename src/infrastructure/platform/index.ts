@@ -29,6 +29,7 @@ import { LocalPHashIdentifier } from "../vision/localPHashIdentifier";
 import { AnthropicVisionClient } from "../vision/anthropicVisionClient";
 import { OpenAIVisionClient } from "../vision/openaiVisionClient";
 import { HybridIdentificationService } from "../vision/hybridIdentificationService";
+import { settingsStore } from "../settings/settingsStore";
 
 function isTauri(): boolean {
   return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
@@ -66,14 +67,18 @@ function buildBrowserStorage(): IStorageAdapter {
 
 function resolvePlatform(): IPlatform {
   const storage = isTauri() ? buildTauriStorage() : buildBrowserStorage();
+  const env = typeof import.meta !== "undefined" ? import.meta.env : undefined;
+  const pokemonTcgKey =
+    settingsStore.getPokemonTcgKey() ?? (env?.VITE_POKEMON_TCG_API_KEY as string | undefined);
   const cardDataProvider = new CachingCardDataProvider(
-    new PokemonTCGApiClient(),
+    new PokemonTCGApiClient(pokemonTcgKey),
     storage.cardRepository,
     storage.cardSetRepository,
   );
-  const env = typeof import.meta !== "undefined" ? import.meta.env : undefined;
-  const openaiKey = env?.VITE_OPENAI_API_KEY as string | undefined;
-  const anthropicKey = env?.VITE_ANTHROPIC_API_KEY as string | undefined;
+  const openaiKey =
+    settingsStore.getOpenAIKey() ?? (env?.VITE_OPENAI_API_KEY as string | undefined);
+  const anthropicKey =
+    settingsStore.getAnthropicKey() ?? (env?.VITE_ANTHROPIC_API_KEY as string | undefined);
   const llmClient = openaiKey
     ? new OpenAIVisionClient(openaiKey)
     : anthropicKey

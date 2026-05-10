@@ -331,7 +331,10 @@ export function ScannerPage() {
           )}
 
           <div className="absolute bottom-3 left-0 right-0 flex justify-center pointer-events-none z-20">
-            <span className={`rounded px-3 py-1 text-xs font-medium ${statusColor(phase)}`}>
+            <span
+              aria-live="polite"
+              className={`rounded px-3 py-1 text-xs font-medium ${statusColor(phase)}`}
+            >
               {statusLabel(phase)}
             </span>
           </div>

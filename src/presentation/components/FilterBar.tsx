@@ -110,6 +110,7 @@ export function FilterBar({ filter, availableSets, availableRarities, onChange }
             <button
               key={value}
               onClick={() => set("sortBy", value)}
+              aria-pressed={filter.sortBy === value}
               className={`px-3 py-1 rounded text-sm ${
                 filter.sortBy === value
                   ? "bg-gray-900 text-white"

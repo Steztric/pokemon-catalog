@@ -55,8 +55,8 @@ export function ConfirmationPanel({ data, onConfirm, onReject, searchCards }: Co
 
   if (mode === "search") {
     return (
-      <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-lg">
-        <h2 className="text-lg font-semibold text-gray-900 mb-1">Search for card</h2>
+      <div role="dialog" aria-modal="true" aria-labelledby="search-panel-title" className="bg-white rounded-xl shadow-xl p-6 w-full max-w-lg">
+        <h2 id="search-panel-title" className="text-lg font-semibold text-gray-900 mb-1">Search for card</h2>
         <p className="text-sm text-gray-500 mb-4">
           Type a card name to find the correct match.
         </p>
@@ -107,7 +107,7 @@ export function ConfirmationPanel({ data, onConfirm, onReject, searchCards }: Co
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-lg">
+    <div role="dialog" aria-modal="true" aria-labelledby="confirm-panel-title" className="bg-white rounded-xl shadow-xl p-6 w-full max-w-lg">
       <div className="flex items-start gap-4 mb-5">
         {card ? (
           <img
@@ -135,12 +135,12 @@ export function ConfirmationPanel({ data, onConfirm, onReject, searchCards }: Co
           </div>
           {card ? (
             <>
-              <h2 className="text-xl font-bold text-gray-900 leading-tight">{card.name}</h2>
+              <h2 id="confirm-panel-title" className="text-xl font-bold text-gray-900 leading-tight">{card.name}</h2>
               <p className="text-sm text-gray-600 mt-0.5">{card.setName} · #{card.number}</p>
               <p className="text-sm text-gray-400">{card.rarity}</p>
             </>
           ) : (
-            <h2 className="text-xl font-bold text-gray-400">Unknown card</h2>
+            <h2 id="confirm-panel-title" className="text-xl font-bold text-gray-400">Unknown card</h2>
           )}
           <p className="mt-3 text-xs text-gray-400">
             {(result.confidence * 100).toFixed(0)}% confidence · {result.strategy}

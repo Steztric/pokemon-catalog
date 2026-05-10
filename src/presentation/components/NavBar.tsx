@@ -24,6 +24,16 @@ export function NavBar() {
       >
         Scanner
       </NavLink>
+      <NavLink
+        to="/settings"
+        className={({ isActive }) =>
+          `text-sm font-medium transition-colors ml-auto ${
+            isActive ? "text-blue-600" : "text-gray-600 hover:text-gray-900"
+          }`
+        }
+      >
+        Settings
+      </NavLink>
     </nav>
   );
 }

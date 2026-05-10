@@ -4,31 +4,28 @@
      Update it at the end of each phase or significant sub-task.
      The /project-status command reads this file to report status. -->
 
-last_updated: 2026-05-02
+last_updated: 2026-05-10
 current_phase: 11
-overall_status: in_progress
+overall_status: complete
 
 ---
 
 ## Current Focus
 
-Phase 10 (Image Caching and Offline Support) is complete. `IFileSystem` abstraction
-introduced for testable filesystem operations. `FilesystemImageCacheAdapter` implements
-`IImageCacheAdapter` against an injectable `IFileSystem`; production wired via
-`TauriFileSystem` (wraps `@tauri-apps/plugin-fs` — `readFile`, `writeFile`, `exists`,
-`mkdir`, `appLocalDataDir`, `convertFileSrc`). `BrowserImageCacheAdapter` uses the browser
-Cache API with graceful degradation when `caches` is unavailable. Both adapters wired in
-`platform/index.ts` (Tauri → filesystem, browser → Cache API); stub removed.
-`addCardToCatalog` and `confirmScan` updated to accept `IImageCacheAdapter` and pre-cache
-card images via `fetch` after confirming a scan (non-fatal on failure). `useCardImage` hook
-resolves cached URLs asynchronously, falling back to the remote URL. `CardTile` and
-`CardList` use `useCardImage`; `ScannerPage.handleConfirm` passes `platform.imageCache`.
-`@tauri-apps/plugin-fs` added to npm and Cargo; plugin registered in `lib.rs`; fs
-permissions added to capabilities. 22 new tests (9 FilesystemImageCacheAdapter, 6
-BrowserImageCacheAdapter, 4 useCardImage, 3 new AddCardToCatalog image-caching paths).
-Total: 256 tests passing.
+Phase 11 (Settings, Error Handling, and Polish) is complete. All phases are done.
 
-Next: Phase 11 — Settings, Error Handling, and Polish.
+`settingsStore` module reads/writes API keys from `localStorage` under the `pokemon-catalog.*`
+namespace. `platform/index.ts` updated to prefer `settingsStore` values over Vite env vars for
+the OpenAI key, Anthropic key, and Pokémon TCG key; `PokemonTCGApiClient` now accepts an
+optional `apiKey` constructor parameter. `/settings` route added with `SettingsPage` component:
+three masked API-key inputs with save + reload-to-apply flow; Card Index section showing indexed
+vs total card count (via `useIndexStats` hook backed by `IPHashIndexRepository.count()`) and a
+Rebuild Index button. `PageErrorBoundary` class component wraps each page route in `App.tsx`,
+catching render errors and showing a Try-again fallback. `NavBar` extended with a Settings link
+(right-aligned). ARIA improvements: `ConfirmationPanel` gains `role="dialog"`, `aria-modal`,
+and `aria-labelledby`; scanner status label gains `aria-live="polite"`; FilterBar sort buttons
+gain `aria-pressed`. 20 new tests (7 settingsStore, 4 PageErrorBoundary, 3 useIndexStats,
+6 SettingsPage). Total: 287 tests passing.
 
 ---
 
@@ -46,7 +43,7 @@ Next: Phase 11 — Settings, Error Handling, and Polish.
 | 8 | LLM Vision Fallback | complete | 2026-04-28 |
 | 9 | Scan Confirmation Flow and Catalog Management | complete | 2026-05-02 |
 | 10 | Image Caching and Offline Support | complete | 2026-05-02 |
-| 11 | Settings, Error Handling, and Polish | not-started | — |
+| 11 | Settings, Error Handling, and Polish | complete | 2026-05-10 |
 
 Status values: `not-started` | `in-progress` | `complete` | `blocked`
 
@@ -164,9 +161,16 @@ Status values: `not-started` | `in-progress` | `complete` | `blocked`
   `CardList` use `useCardImage`. 22 new tests. Total: 256 tests passing.
 
 ### Phase 11 — Settings, Error Handling, and Polish
-- Status: not-started
-- Blockers: Phase 10 must be complete
-- Notes: —
+- Status: complete
+- Blockers: none
+- Notes: `settingsStore` (localStorage, `pokemon-catalog.*` prefix) for all three API keys.
+  `platform/index.ts` reads settingsStore first, falls back to env vars. `SettingsPage` at
+  `/settings`: masked password inputs for OpenAI/Anthropic/Pokémon TCG keys, save + reload-to-apply
+  flow; Card Index section with `useIndexStats` hook (backed by `IPHashIndexRepository.count()`)
+  and Rebuild Index button. `PageErrorBoundary` class component wraps each page route.
+  `NavBar` extended with Settings link. ARIA: `ConfirmationPanel` `role="dialog"` +
+  `aria-labelledby`; scanner status `aria-live="polite"`; FilterBar sort buttons `aria-pressed`.
+  20 new tests. Total: 287 tests passing.
 
 ---
 
