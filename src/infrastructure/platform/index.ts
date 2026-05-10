@@ -27,6 +27,7 @@ import {
 } from "../db/IndexedDBRepositories";
 import { LocalPHashIdentifier } from "../vision/localPHashIdentifier";
 import { AnthropicVisionClient } from "../vision/anthropicVisionClient";
+import { OpenAIVisionClient } from "../vision/openaiVisionClient";
 import { HybridIdentificationService } from "../vision/hybridIdentificationService";
 
 function isTauri(): boolean {
@@ -70,9 +71,14 @@ function resolvePlatform(): IPlatform {
     storage.cardRepository,
     storage.cardSetRepository,
   );
-  const apiKey =
-    typeof import.meta !== "undefined" ? (import.meta.env?.VITE_ANTHROPIC_API_KEY as string | undefined) : undefined;
-  const llmClient = apiKey ? new AnthropicVisionClient(apiKey) : null;
+  const env = typeof import.meta !== "undefined" ? import.meta.env : undefined;
+  const openaiKey = env?.VITE_OPENAI_API_KEY as string | undefined;
+  const anthropicKey = env?.VITE_ANTHROPIC_API_KEY as string | undefined;
+  const llmClient = openaiKey
+    ? new OpenAIVisionClient(openaiKey)
+    : anthropicKey
+      ? new AnthropicVisionClient(anthropicKey)
+      : null;
   const cardIdentificationService = new HybridIdentificationService(
     new LocalPHashIdentifier(storage.pHashIndexRepository),
     llmClient,

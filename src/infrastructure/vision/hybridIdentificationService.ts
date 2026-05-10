@@ -1,11 +1,15 @@
 import type { ICardIdentificationService, IPokemonCardDataProvider } from "../../domain/interfaces";
 import type { ImageFrame, IdentificationResult } from "../../domain/entities";
-import type { AnthropicVisionClient } from "./anthropicVisionClient";
+import type { LLMCardIdentification } from "./anthropicVisionClient";
+
+interface LLMClient {
+  identifyCard(frame: ImageFrame): Promise<LLMCardIdentification | null>;
+}
 
 export class HybridIdentificationService implements ICardIdentificationService {
   constructor(
     private readonly local: ICardIdentificationService,
-    private readonly llm: AnthropicVisionClient | null,
+    private readonly llm: LLMClient | null,
     private readonly cardDataProvider: IPokemonCardDataProvider,
   ) {}
 
@@ -25,7 +29,7 @@ export class HybridIdentificationService implements ICardIdentificationService {
     }
 
     console.log("[hybrid] local low_confidence — calling LLM vision…");
-    let llmResult: Awaited<ReturnType<AnthropicVisionClient["identifyCard"]>>;
+    let llmResult: LLMCardIdentification | null;
     try {
       llmResult = await this.llm.identifyCard(frame);
     } catch (err) {

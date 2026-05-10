@@ -168,14 +168,18 @@ export function ScannerPage() {
       const result = detectorRef.current.detect(frame);
 
       if (!result.detected) {
+        if (hasResultRef.current) {
+          // Confirmation panel is open — preserve it until the user acts.
+          return;
+        }
         if (phaseRef.current !== "idle") {
           detectorRef.current.reset();
           capturedFrameRef.current = null;
           identifyingRef.current = false;
-          hasResultRef.current = false;
           setPhaseSync("idle");
-          drawGuide(canvas, video, "idle");
         }
+        // Always redraw the idle guide (handles startup and transitions).
+        drawGuide(canvas, video, "idle");
         return;
       }
 
